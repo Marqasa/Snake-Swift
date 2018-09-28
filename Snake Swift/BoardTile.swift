@@ -16,42 +16,41 @@ class BoardTile: UIView {
     
     override func draw(_ rect: CGRect) {
         let context: CGContext = UIGraphicsGetCurrentContext()!
-        var fill = true
-        var stroke = true
+        UIColor.white.setFill()
+        UIColor.white.setStroke()
+        context.fill(self.bounds)
+        context.stroke(self.bounds)
         
         if isWall {
             UIColor.black.setFill()
             UIColor.black.setStroke()
-            
-        } else if isHead {
-            UIColor.white.setFill()
-            UIColor.white.setStroke()
             context.fill(self.bounds)
             context.stroke(self.bounds)
-            fill = false
-            stroke = false
+            
+        } else if isHead {
             
             let head = UIBezierPath()
             
-            if facing == Direction.Up {
+            switch facing {
+            case .Up:
                 head.move(to: CGPoint(x: 0, y: self.bounds.size.height))
                 head.addLine(to: CGPoint(x: 0, y: self.bounds.size.height / 2))
                 head.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: 0))
                 head.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height / 2))
                 head.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height))
-            } else if facing == Direction.Right {
+            case .Right:
                 head.move(to: CGPoint(x: 0, y: 0))
                 head.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: 0))
                 head.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height / 2))
                 head.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: self.bounds.size.height))
                 head.addLine(to: CGPoint(x: 0, y: self.bounds.size.height))
-            } else if facing == Direction.Down {
+            case .Down:
                 head.move(to: CGPoint(x: self.bounds.size.width, y: 0))
                 head.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height / 2))
                 head.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: self.bounds.size.height))
                 head.addLine(to: CGPoint(x: 0, y: self.bounds.size.height / 2))
                 head.addLine(to: CGPoint(x: 0, y: 0))
-            } else if (self.facing == Direction.Left) {
+            case .Left:
                 head.move(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height))
                 head.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: self.bounds.size.height))
                 head.addLine(to: CGPoint(x: 0, y: self.bounds.size.height / 2))
@@ -62,22 +61,54 @@ class BoardTile: UIView {
             head.close()
             head.lineWidth = 1
             UIColor.red.setFill()
-            UIColor.purple.setStroke()
+            UIColor.black.setStroke()
             head.fill()
             head.stroke()
             
-        } else if isBody || isTail {
+        } else if isBody {
             
             UIColor.red.setFill()
-            UIColor.purple.setStroke()
-            
-        } else if isFruit {
-            UIColor.white.setFill()
-            UIColor.white.setStroke()
+            UIColor.black.setStroke()
             context.fill(self.bounds)
             context.stroke(self.bounds)
-            fill = false
-            stroke = false
+            
+        } else if isTail {
+            
+            let tail = UIBezierPath()
+            
+            tail.move(to: CGPoint(x: 0, y: 0))
+            
+            switch facing {
+            case .Up:
+                tail.addLine(to: CGPoint(x: self.bounds.size.width, y: 0))
+                tail.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height))
+                tail.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: self.bounds.size.height / 2))
+                tail.addLine(to: CGPoint(x: 0, y: self.bounds.size.height))
+            case .Right:
+                tail.addLine(to: CGPoint(x: self.bounds.size.width, y: 0))
+                tail.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height))
+                tail.addLine(to: CGPoint(x: 0, y: self.bounds.size.height))
+                tail.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: self.bounds.size.height / 2))
+            case .Down:
+                tail.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: self.bounds.size.height / 2))
+                tail.addLine(to: CGPoint(x: self.bounds.size.width, y: 0))
+                tail.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height))
+                tail.addLine(to: CGPoint(x: 0, y: self.bounds.size.height))
+            case .Left:
+                tail.addLine(to: CGPoint(x: self.bounds.size.width, y: 0))
+                tail.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: self.bounds.size.height / 2))
+                tail.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height))
+                tail.addLine(to: CGPoint(x: 0, y: self.bounds.size.height))
+            }
+            
+            tail.close()
+            tail.lineWidth = 1
+            UIColor.red.setFill()
+            UIColor.black.setStroke()
+            tail.fill()
+            tail.stroke()
+            
+        } else if isFruit {
             
             let fruit = UIBezierPath()
             fruit.move(to: CGPoint(x: self.bounds.size.width / 2, y: 0))
@@ -91,19 +122,7 @@ class BoardTile: UIView {
             UIColor.yellow.setStroke()
             fruit.fill()
             fruit.stroke()
-
-        } else {
             
-            UIColor.white.setFill()
-            UIColor.white.setStroke()
-            
-        }
-        
-        if fill {
-            context.fill(self.bounds)
-        }
-        if stroke {
-            context.stroke(self.bounds)
         }
     }
 }
