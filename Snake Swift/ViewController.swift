@@ -111,9 +111,8 @@ class ViewController: UIViewController {
     // The game loop:
     func gameLoop() {
         moveTile(headID, newDirection)
+        fruitAI()
         
-        
-        //            [self fruitAI];
         //            [self collisionAI];
         
     }
@@ -136,6 +135,7 @@ class ViewController: UIViewController {
             // Check for game over:
             if gameBoard[headID].isBody || gameBoard[headID].isWall {
                 gameOver()
+                return
             }
             
             gameBoard[headID].facing = direction
@@ -222,6 +222,114 @@ class ViewController: UIViewController {
         }
         return true
     }
+    
+    // A snake gotta eat!
+    func fruitAI() {
+        
+        // Directly down:
+        if gameBoard[fruitID].tileRow > gameBoard[headID].tileRow && gameBoard[fruitID].tileCol == gameBoard[headID].tileCol {
+            
+            // If not currently going up, go down:
+            if gameBoard[headID].facing != .Up {
+                newDirection = .Down
+            } else {
+                // Go either left or right:
+                if arc4random_uniform(2) > 0 && !gameBoard[headID + boardCol].isWall {
+                    newDirection = .Right
+                } else {
+                    newDirection = .Left
+                }
+            }
+        }
+        
+        // Down right:
+        if gameBoard[fruitID].tileRow > gameBoard[headID].tileRow && gameBoard[fruitID].tileCol > gameBoard[headID].tileCol {
+            
+            // Only change course if not already going down or right:
+            if gameBoard[headID].facing != .Down && gameBoard[headID].facing != .Right {
+                
+                // Go either down or right:
+                if gameBoard[headID].facing == .Left && gameBoard[headID + boardRow].isWall {
+                    newDirection = .Down
+                } else {
+                    newDirection = .Right
+                }
+            }
+        }
+        
+        // Directly right:
+        if gameBoard[fruitID].tileRow == gameBoard[headID].tileRow && gameBoard[fruitID].tileCol > gameBoard[headID].tileCol {
+            if gameBoard[headID].facing != .Left {
+                newDirection = .Right
+            } else {
+                if arc4random_uniform(2) > 0 && !gameBoard[headID + boardRow].isWall {
+                    newDirection = .Down
+                } else {
+                    newDirection = .Up
+                }
+            }
+        }
+        
+        // Up right:
+        if (gameBoard[fruitID].tileRow < gameBoard[headID].tileRow && gameBoard[fruitID].tileCol > gameBoard[headID].tileCol) {
+            if gameBoard[headID].facing != .Right && gameBoard[headID].facing != .Up {
+                if gameBoard[headID].facing == .Down && !gameBoard[headID + boardCol].isWall {
+                    newDirection = .Right
+                } else {
+                    newDirection = .Up
+                }
+            }
+        }
+        
+        // Directyly up:
+        if (gameBoard[fruitID].tileRow < gameBoard[headID].tileRow && gameBoard[fruitID].tileCol == gameBoard[headID].tileCol) {
+            if gameBoard[headID].facing != .Down {
+                newDirection = .Up
+            } else {
+                if arc4random_uniform(2) > 0 && !gameBoard[headID + boardCol].isWall {
+                    newDirection = .Right
+                } else {
+                    newDirection = .Left
+                }
+            }
+        }
+        
+        // Up left:
+        if (gameBoard[fruitID].tileRow < gameBoard[headID].tileRow && gameBoard[fruitID].tileCol < gameBoard[headID].tileCol) {
+            if gameBoard[headID].facing != .Up && gameBoard[headID].facing != .Left {
+                if gameBoard[headID].facing == .Right && !gameBoard[headID - boardRow].isWall {
+                    newDirection = .Up
+                } else {
+                    newDirection = .Left
+                }
+            }
+        }
+        
+        // Directly left:
+        if (gameBoard[fruitID].tileRow == gameBoard[headID].tileRow && gameBoard[fruitID].tileCol < gameBoard[headID].tileCol) {
+            if gameBoard[headID].facing != .Right {
+                newDirection = .Left
+            } else {
+                if arc4random_uniform(2) > 0 && !gameBoard[headID + boardRow].isWall {
+                    newDirection = .Down
+                } else {
+                    newDirection = .Up
+                }
+            }
+        }
+        
+        // Down left:
+        if (gameBoard[fruitID].tileRow > gameBoard[headID].tileRow && gameBoard[fruitID].tileCol < gameBoard[headID].tileCol) {
+            if gameBoard[headID].facing != .Left && gameBoard[headID].facing != .Down {
+                if gameBoard[headID].facing == .Right {
+                    newDirection = .Down
+                } else {
+                    newDirection = .Left
+                }
+            }
+        }
+    }
+    
     
     func gameOver() {
         print("Game Over")
