@@ -8,7 +8,8 @@
 
 import UIKit
 
-let BOARDSIZE = 512
+//TODO: Check BOARDSIZE is a perfect square
+let BOARDSIZE = 49
 let GAMESPEED = 0.5
 
 enum Direction {
@@ -22,7 +23,7 @@ class ViewController: UIViewController {
     var gameTimer = Timer()
     var tileSize: CGFloat = 0.0, yPos: CGFloat = 0.0
     var newDirection: Direction = .Right
-    var headPos = 0, tailPos = 0, fruitPos = 0, snakeLength = 0, moves = 0, boardCol = 0, boardRow = 0, routeID = 0
+    var headID = 0, tailID = 0, fruitID = 0, snakeLength = 0, moves = 0, boardCol = 0, boardRow = 0, routeID = 0
     var isPaused = false
     var upSafe = false, rightSafe = false, downSafe = false, leftSafe = false
     var gameBoard = [BoardTile]()
@@ -60,15 +61,15 @@ class ViewController: UIViewController {
         }
         
         // Add the snake:
-        headPos = (boardCol * 3) + (boardRow * 1)
-        tailPos = headPos - (boardCol * 2)
+        headID = (boardCol * 3) + (boardRow * 1)
+        tailID = headID - (boardCol * 2)
         
-        gameBoard[headPos].isHead = true
-        gameBoard[headPos].facing = newDirection
-        gameBoard[headPos - boardCol].isBody = true
-        gameBoard[headPos - boardCol].facing = newDirection
-        gameBoard[tailPos].isTail = true
-        gameBoard[tailPos].facing = newDirection
+        gameBoard[headID].isHead = true
+        gameBoard[headID].facing = newDirection
+        gameBoard[headID - boardCol].isBody = true
+        gameBoard[headID - boardCol].facing = newDirection
+        gameBoard[tailID].isTail = true
+        gameBoard[tailID].facing = newDirection
         snakeLength = 3
         
         // Add a new fruit
@@ -84,8 +85,8 @@ class ViewController: UIViewController {
     
     // Add a new fruit to the board:
     func newFruit() {
-        gameBoard[headPos].isFruit = false
-        routeID = gameBoard[headPos].tileID
+        gameBoard[headID].isFruit = false
+        routeID = gameBoard[headID].tileID
         
         // Only add a new fruit if there is still space on the board:
         if snakeLength < (BOARDSIZE - (boardCol * 4) - 4) {
@@ -97,7 +98,7 @@ class ViewController: UIViewController {
                 if !gameBoard[i].isWall && !gameBoard[i].isHead && !gameBoard[i].isBody && !gameBoard[i].isTail {
                     gameBoard[i].isFruit = true
                     gameBoard[i].setNeedsDisplay()
-                    fruitPos = i
+                    fruitID = i
                     isSet = true
                 }
             }
@@ -109,7 +110,7 @@ class ViewController: UIViewController {
     
     // The game loop:
     func gameLoop() {
-        moveTile(tile: headPos, direction: newDirection)
+        moveTile(headID, newDirection)
         
         
         //            [self fruitAI];
@@ -117,168 +118,109 @@ class ViewController: UIViewController {
         
     }
     
-    // Move tile with direction:
-    func moveTile(tile: Int, direction: Direction) {
+    // Move tile in direction:
+    func moveTile(_ tileID: Int, _ direction: Direction) {
         var hasMoved = false
         
         // Head:
-        if gameBoard[tile].isHead && !gameBoard[tile].isTail && !hasMoved {
+        if gameBoard[tileID].isHead && !gameBoard[tileID].isTail && !hasMoved {
             
             // Make a note of the current direction before setting a new direction:
-            let oldDirection = gameBoard[tile].facing
-            gameBoard[tile].facing = direction
+            let oldDirection = gameBoard[tileID].facing
+            gameBoard[tileID].facing = direction
             
-            // Update head position based on direction:
-            switch (direction) {
-            case .Up:
-                headPos = tile - boardRow
-                break
-            case .Right:
-                headPos = tile + boardCol
-                break
-            case .Down:
-                headPos = tile + boardRow
-                break
-            case .Left:
-                headPos = tile - boardCol
-                break
-            }
-            
-            gameBoard[headPos].isHead = true
-            moves += 1
+            // Update head position with direction:
+            headID = updateTileID(tileID, direction)
+            gameBoard[headID].isHead = true
             
             // Check for game over:
-            if gameBoard[headPos].isBody || gameBoard[headPos].isWall {
+            if gameBoard[headID].isBody || gameBoard[headID].isWall {
                 gameOver()
             }
             
-            gameBoard[headPos].facing = direction
-            gameBoard[headPos].setNeedsDisplay()
-            gameBoard[tile].isHead = false
+            gameBoard[headID].facing = direction
+            gameBoard[headID].setNeedsDisplay()
+            gameBoard[tileID].isHead = false
             
-            // Move next tile:
-            switch (oldDirection) {
-            case .Up:
-                moveTile(tile: tile + boardRow, direction: .Up)
-                break
-            case .Right:
-                moveTile(tile: tile - boardCol, direction: .Right)
-                break
-            case .Down:
-                moveTile(tile: tile - boardRow, direction: .Down)
-                break
-            case .Left:
-                moveTile(tile: tile + boardCol, direction: .Left)
-                break
-            }
-            
-            // Mark tile as moved to avoid moving it twice:
-            hasMoved = true
+            // Move the next tile in the snake:
+            hasMoved = moveNextTile(tileID, oldDirection)
         }
         
         // Body:
-        if gameBoard[tile].isBody && !hasMoved {
-            let oldDirection = gameBoard[tile].facing
-            gameBoard[tile].facing = direction
+        if gameBoard[tileID].isBody && !hasMoved {
+            let oldDirection = gameBoard[tileID].facing
+            gameBoard[tileID].facing = direction
             
-            var bodyPos = 0;
-            switch (direction) {
-            case .Up:
-                bodyPos = tile - boardRow
-                break
-            case .Right:
-                bodyPos = tile + boardCol
-                break
-            case .Down:
-                bodyPos = tile + boardCol
-                break
-            case .Left:
-                bodyPos = tile - boardCol
-                break
-            }
+            // Update body position with direction:
+            let bodyID = updateTileID(tileID, direction)
+            gameBoard[bodyID].isBody = true
+            gameBoard[bodyID].facing = direction
+            gameBoard[bodyID].setNeedsDisplay()
+            gameBoard[tileID].isBody = false
             
-            gameBoard[bodyPos].isBody = true
-            gameBoard[bodyPos].facing = direction
-            gameBoard[bodyPos].setNeedsDisplay()
-            gameBoard[tile].isBody = false
-            
-            switch (oldDirection) {
-            case .Up:
-                moveTile(tile: tile + boardRow, direction: .Up)
-                break
-            case .Right:
-                moveTile(tile: tile - boardCol, direction: .Right)
-                break
-            case .Down:
-                moveTile(tile: tile - boardRow, direction: .Down)
-                break
-            case .Left:
-                moveTile(tile: tile + boardCol, direction: .Left)
-                break
-            }
-            hasMoved = true
+            // Move the next tile in the snake:
+            hasMoved = moveNextTile(tileID, oldDirection)
         }
         
         // Tail:
-        if gameBoard[tile].isTail && !hasMoved {
+        if gameBoard[tileID].isTail && !hasMoved {
             
             // If the snake eats a piece of fruit:
-            if gameBoard[headPos].isFruit {
+            if gameBoard[headID].isFruit {
                 
-                gameBoard[tile].facing = direction
-                
-                // Add a new body tile and update snake length:
-                var bodyPos = 0
-                switch (direction) {
-                case .Up:
-                    bodyPos = tile - boardRow
-                    break
-                case .Right:
-                    bodyPos = tile + boardCol
-                    break
-                case .Down:
-                    bodyPos = tile + boardRow
-                    break
-                case .Left:
-                    bodyPos = tile - boardCol
-                    break
-                }
-                
-                gameBoard[bodyPos].isBody = true
-                gameBoard[bodyPos].facing = direction
-                gameBoard[bodyPos].setNeedsDisplay()
+                // Add a new body tile, update snake length and create a new fruit:
+                gameBoard[tileID].facing = direction
+                let bodyID = updateTileID(tileID, direction)
+                gameBoard[bodyID].isBody = true
+                gameBoard[bodyID].facing = direction
+                gameBoard[bodyID].setNeedsDisplay()
                 snakeLength += 1
                 newFruit()
                 
             } else {
                 
-                // Update tail position:
-                switch (direction) {
-                case .Up:
-                    tailPos = tile - boardRow
-                    break
-                case .Right:
-                    tailPos = tile + boardCol
-                    break
-                case .Down:
-                    tailPos = tile + boardRow
-                    break
-                case .Left:
-                    tailPos = tile - boardCol
-                    break
-                }
-                
-                gameBoard[tailPos].isTail = true
-                gameBoard[tailPos].setNeedsDisplay()
-                gameBoard[tile].isTail = false
-                gameBoard[tile].setNeedsDisplay()
+                // Update tail position with direction:
+                tailID = updateTileID(tileID, direction)
+                gameBoard[tailID].isTail = true
+                gameBoard[tailID].setNeedsDisplay()
+                gameBoard[tileID].isTail = false
+                gameBoard[tileID].setNeedsDisplay()
                 
                 // Only clear direction if the head is not directly behind the tail:
-                if !gameBoard[tile].isHead {
-                    gameBoard[tile].facing = .Up
+                if !gameBoard[tileID].isHead {
+                    gameBoard[tileID].facing = .Up
                 }
             }
         }
+    }
+    
+    // Return updated tileID:
+    func updateTileID(_ tileID: Int, _ direction: Direction) -> Int {
+        switch (direction) {
+        case .Up:
+            return tileID - boardRow
+        case .Right:
+            return tileID + boardCol
+        case .Down:
+            return tileID + boardRow
+        case .Left:
+            return tileID - boardCol
+        }
+    }
+    
+    // Move the next tile in the snake:
+    func moveNextTile(_ tileID: Int, _ direction: Direction) -> Bool {
+        switch (direction) {
+        case .Up:
+            moveTile(tileID + boardRow, .Up)
+        case .Right:
+            moveTile(tileID - boardCol, .Right)
+        case .Down:
+            moveTile(tileID - boardRow, .Down)
+        case .Left:
+            moveTile(tileID + boardCol, .Left)
+        }
+        return true
     }
     
     func gameOver() {
