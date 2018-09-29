@@ -9,8 +9,8 @@
 import UIKit
 
 //TODO: Check BOARDSIZE is a perfect square
-let BOARDSIZE = 49
-let GAMESPEED = 0.5
+let BOARDSIZE = 64
+let GAMESPEED = 0.1
 
 enum Direction {
     case Up
@@ -61,7 +61,7 @@ class ViewController: UIViewController {
         }
         
         // Add the snake:
-        headID = (boardCol * 3) + (boardRow * 1)
+        headID = (boardCol * 3) + boardRow
         tailID = headID - (boardCol * 2)
         
         gameBoard[headID].isHead = true
@@ -86,10 +86,9 @@ class ViewController: UIViewController {
     // Add a new fruit to the board:
     func newFruit() {
         gameBoard[headID].isFruit = false
-        routeID = gameBoard[headID].tileID
         
         // Only add a new fruit if there is still space on the board:
-        if snakeLength < (BOARDSIZE - (boardCol * 4) - 4) {
+        if snakeLength < (BOARDSIZE - (boardCol * 4) + 4) {
             var isSet = false
             while !isSet {
                 let i = Int(arc4random()) % BOARDSIZE
@@ -105,16 +104,15 @@ class ViewController: UIViewController {
             moves = 0
         } else {
             //TODO: Add victory screen
+            print("You Win!")
         }
     }
     
     // The game loop:
     func gameLoop() {
-        moveTile(headID, newDirection)
         fruitAI()
-        
-        //            [self collisionAI];
-        
+        collisionAI()
+        moveTile(headID, newDirection)
     }
     
     // Move tile in direction:
@@ -249,7 +247,7 @@ class ViewController: UIViewController {
             if gameBoard[headID].facing != .Down && gameBoard[headID].facing != .Right {
                 
                 // Go either down or right:
-                if gameBoard[headID].facing == .Left && gameBoard[headID + boardRow].isWall {
+                if gameBoard[headID].facing == .Left && !gameBoard[headID + boardRow].isWall {
                     newDirection = .Down
                 } else {
                     newDirection = .Right
@@ -330,6 +328,217 @@ class ViewController: UIViewController {
         }
     }
     
+    func collisionAI() {
+        resetChecks()
+        checkDirection(newDirection)
+    }
+    
+    // Check direction is safe and change if not:
+    func checkDirection(_ direction: Direction) {
+        switch direction {
+        case .Up:
+            if !upSafe {
+                _ = checkTile(headID - boardRow, .Up)
+                if !upSafe {
+                    newDirection = .Right
+                    checkDirection(newDirection)
+                }
+            }
+        case .Right:
+            if !rightSafe {
+                _ = checkTile(headID + boardCol, .Right)
+                if !rightSafe {
+                    newDirection = .Down
+                    checkDirection(newDirection)
+                }
+            }
+        case .Down:
+            if !downSafe {
+                _ = checkTile(headID + boardRow, .Down)
+                if !downSafe {
+                    newDirection = .Left
+                    checkDirection(newDirection)
+                }
+            }
+        case .Left:
+            if !leftSafe {
+                _ = checkTile(headID - boardCol, .Left)
+                if !leftSafe {
+                    newDirection = .Up
+                    checkDirection(newDirection)
+                }
+            }
+        }
+    }
+    
+    // Reset checks for every tile in gameBoard
+    func resetChecks() {
+        for tile in gameBoard {
+            tile.upChecked = false
+            tile.rightChecked = false
+            tile.downChecked = false
+            tile.leftChecked = false
+        }
+        
+        upSafe = false
+        rightSafe = false
+        downSafe = false
+        leftSafe = false
+        
+    }
+    
+    func checkTile(_ tileID: Int, _ direction: Direction) -> Bool {
+        
+        // Make sure tile/direction still need checking:
+        switch direction {
+        case .Up:
+            if gameBoard[tileID].upChecked || upSafe {
+                return false
+            }
+        case .Right:
+            if gameBoard[tileID].rightChecked || rightSafe {
+                return false
+            }
+        case .Down:
+            if gameBoard[tileID].downChecked || downSafe {
+                return false
+            }
+        case .Left:
+            if gameBoard[tileID].leftChecked || leftSafe {
+                return false
+            }
+        }
+        
+        // Check for wall/body
+        if gameBoard[tileID].isWall || gameBoard[tileID].isBody {
+            return false
+        }
+        
+        // If this tile will be adjacent to the tail when we get there, this direction is safe:
+        if !gameBoard[tileID].isFruit {
+            
+            switch gameBoard[tailID].facing {
+            case .Up:
+                
+                let safe = tailID - boardRow // The tile below the tail
+                
+                if tileID - boardRow == safe || tileID + boardCol == safe || tileID - boardCol == safe {
+                    markAsSafe(direction)
+                    return false
+                }
+                
+            case .Right:
+                
+                let safe = tailID + boardCol // The tile to the right of the tail
+                
+                if tileID + boardRow == safe || tileID - boardRow == safe || tileID + boardCol == safe {
+                    markAsSafe(direction)
+                    return false
+                }
+                
+            case .Down:
+                
+                let safe = tailID + boardRow // The tile above the tail
+                
+                if tileID - boardCol == safe || tileID + boardCol == safe || tileID + boardRow == safe {
+                    markAsSafe(direction)
+                    return false
+                }
+                
+            case .Left:
+                
+                let safe = tailID - boardCol // The tile to the left of the tail
+                
+                if tileID - boardCol == safe || tileID - boardRow == safe || tileID + boardRow == safe {
+                    markAsSafe(direction)
+                    return false
+                }
+            }
+        }
+        
+        markAsChecked(tileID, direction)
+        
+        // Check the next tile and return true if the tail is found:
+        
+        // The tile above
+        if checkNextTile(tileID - boardRow, direction) {
+            return true
+        }
+        
+        // The tile to the right
+        if checkNextTile(tileID + boardCol, direction) {
+            return true
+        }
+        
+        // The tile below
+        if checkNextTile(tileID + boardRow, direction) {
+            return true
+        }
+        
+        // The tile to the left
+        if checkNextTile(tileID - boardCol, direction) {
+            return true
+        }
+        
+        // This direction is not safe:
+        return false
+    }
+    
+    // Check next tile:
+    func checkNextTile(_ tileID: Int, _ direction: Direction) -> Bool {
+        // Only check if the tile is blank:
+        if tileIsBlank(tileID) {
+            
+            if checkTile(tileID, direction) {
+                return true
+            }
+            
+        } else if gameBoard[tileID].isTail {
+            
+            // We found the tail so we can stop searching:
+            markAsSafe(direction)
+            return true
+            
+        }
+        return false
+    }
+    
+    // Returns true if tileID is blank:
+    func tileIsBlank(_ tileID: Int) -> Bool {
+        if !gameBoard[tileID].isHead && !gameBoard[tileID].isBody && !gameBoard[tileID].isTail && !gameBoard[tileID].isWall {
+            return true
+        } else {
+            return false
+        }
+    }
+    
+    // Mark direction as checked:
+    func markAsChecked(_ tileID: Int, _ direction: Direction) {
+        switch direction {
+        case .Up:
+            gameBoard[tileID].upChecked = true
+        case .Right:
+            gameBoard[tileID].rightChecked = true
+        case .Down:
+            gameBoard[tileID].downChecked = true
+        case .Left:
+            gameBoard[tileID].leftChecked = true
+        }
+    }
+    
+    // Mark direction as safe
+    func markAsSafe(_ direction: Direction) {
+        switch direction {
+        case .Up:
+            upSafe = true
+        case .Right:
+            rightSafe = true
+        case .Down:
+            downSafe = true
+        case .Left:
+            leftSafe = true
+        }
+    }
     
     func gameOver() {
         print("Game Over")
