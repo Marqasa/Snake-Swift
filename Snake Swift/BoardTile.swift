@@ -15,11 +15,19 @@ class BoardTile: UIView {
     var tileCol = 0, tileRow = 0, tileID = 0
     
     override func draw(_ rect: CGRect) {
+        
+        let tileWidth = self.bounds.size.width
+        let tileHeight = self.bounds.size.height
+        
+        let border = self.bounds.size.height / 8
+        
         let context: CGContext = UIGraphicsGetCurrentContext()!
         UIColor.white.setFill()
         UIColor.white.setStroke()
         context.fill(self.bounds)
         context.stroke(self.bounds)
+        
+        let snakeColor = UIColor.init(hue: CGFloat(snakeHue), saturation: 0.5, brightness: 0.9, alpha: 1)
         
         if isWall {
             UIColor.black.setFill()
@@ -33,77 +41,168 @@ class BoardTile: UIView {
             
             switch facing {
             case .Up:
-                head.move(to: CGPoint(x: 0, y: self.bounds.size.height))
-                head.addLine(to: CGPoint(x: 0, y: self.bounds.size.height / 2))
-                head.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: 0))
-                head.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height / 2))
-                head.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height))
+                head.move(to: CGPoint(x: 0 + border, y: tileHeight))
+                head.addLine(to: CGPoint(x: 0 + border, y: tileHeight / 2))
+                head.addLine(to: CGPoint(x: tileWidth / 2, y: 0 + border))
+                head.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight / 2))
+                head.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight))
             case .Right:
-                head.move(to: CGPoint(x: 0, y: 0))
-                head.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: 0))
-                head.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height / 2))
-                head.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: self.bounds.size.height))
-                head.addLine(to: CGPoint(x: 0, y: self.bounds.size.height))
+                head.move(to: CGPoint(x: 0 , y: 0 + border))
+                head.addLine(to: CGPoint(x: tileWidth / 2, y: 0 + border))
+                head.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight / 2))
+                head.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight - border))
+                head.addLine(to: CGPoint(x: 0, y: tileHeight - border))
             case .Down:
-                head.move(to: CGPoint(x: self.bounds.size.width, y: 0))
-                head.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height / 2))
-                head.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: self.bounds.size.height))
-                head.addLine(to: CGPoint(x: 0, y: self.bounds.size.height / 2))
-                head.addLine(to: CGPoint(x: 0, y: 0))
+                head.move(to: CGPoint(x: 0 + border, y: 0))
+                head.addLine(to: CGPoint(x: tileWidth - border, y: 0))
+                head.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight / 2))
+                head.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight - border))
+                head.addLine(to: CGPoint(x: 0 + border, y: tileHeight / 2))
             case .Left:
-                head.move(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height))
-                head.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: self.bounds.size.height))
-                head.addLine(to: CGPoint(x: 0, y: self.bounds.size.height / 2))
-                head.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: 0))
-                head.addLine(to: CGPoint(x: self.bounds.size.width, y: 0))
+                head.move(to: CGPoint(x: tileWidth, y: tileHeight - border))
+                head.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight - border))
+                head.addLine(to: CGPoint(x: 0 + border, y: tileHeight / 2))
+                head.addLine(to: CGPoint(x: tileWidth / 2, y: 0 + border))
+                head.addLine(to: CGPoint(x: tileWidth, y: 0 + border))
             }
             
             head.close()
             head.lineWidth = 1
-            UIColor.red.setFill()
+            snakeColor.setFill()
             UIColor.black.setStroke()
             head.fill()
             head.stroke()
             
         } else if isBody {
             
-            UIColor.red.setFill()
-            UIColor.black.setStroke()
-            context.fill(self.bounds)
-            context.stroke(self.bounds)
+            let body = UIBezierPath()
             
+            func drawBodyUpRight() {
+                body.move(to: CGPoint(x: 0 + border, y: 0))
+                body.addLine(to: CGPoint(x: tileWidth - border, y: 0))
+                body.addLine(to: CGPoint(x: tileWidth, y: 0 + border))
+                body.addLine(to: CGPoint(x: tileWidth, y: tileHeight - border))
+                body.addLine(to: CGPoint(x: (tileWidth / 2) + (border / 2), y: tileHeight - border))
+                body.addLine(to: CGPoint(x: 0 + border, y: (tileHeight / 2) - (border / 2)))
+            }
+            
+            func drawBodyUpDown() {
+                body.move(to: CGPoint(x: 0 + border, y: 0))
+                body.addLine(to: CGPoint(x: tileWidth - border, y: 0))
+                body.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight))
+                body.addLine(to: CGPoint(x: 0 + border, y: tileHeight))
+            }
+            
+            func drawBodyUpLeft() {
+                body.move(to: CGPoint(x: 0 + border, y: 0))
+                body.addLine(to: CGPoint(x: tileWidth - border, y: 0))
+                body.addLine(to: CGPoint(x: tileWidth - border, y: (tileHeight / 2) - (border / 2)))
+                body.addLine(to: CGPoint(x: (tileWidth / 2) - (border / 2), y: tileHeight - border))
+                body.addLine(to: CGPoint(x: 0, y: tileHeight - border))
+                body.addLine(to: CGPoint(x: 0, y: 0 + border))
+            }
+            
+            func drawBodyRightLeft() {
+                body.move(to: CGPoint(x: 0, y: 0 + border))
+                body.addLine(to: CGPoint(x: tileWidth, y: 0 + border))
+                body.addLine(to: CGPoint(x: tileWidth, y: tileHeight - border))
+                body.addLine(to: CGPoint(x: 0, y: tileHeight - border))
+            }
+            
+            func drawBodyRightDown() {
+                body.move(to: CGPoint(x: (tileWidth / 2) + (border / 2), y: 0 + border))
+                body.addLine(to: CGPoint(x: tileWidth, y: 0 + border))
+                body.addLine(to: CGPoint(x: tileWidth, y: tileHeight - border))
+                body.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight))
+                body.addLine(to: CGPoint(x: 0 + border, y: tileHeight))
+                body.addLine(to: CGPoint(x: 0 + border, y: (tileHeight / 2) + (border / 2)))
+            }
+            
+            func drawBodyDownLeft() {
+                body.move(to: CGPoint(x: 0, y: 0 + border))
+                body.addLine(to: CGPoint(x: (tileWidth / 2) - (border / 2), y: 0 + border))
+                body.addLine(to: CGPoint(x: tileWidth - border, y: (tileHeight / 2) + (border / 2)))
+                body.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight))
+                body.addLine(to: CGPoint(x: 0 + border, y: tileHeight))
+                body.addLine(to: CGPoint(x: 0, y: tileHeight - border))
+            }
+            
+            let index = snake.firstIndex(of: self.tileID)
+            
+            switch facing {
+            case .Up:
+                if snake[index! + 1] == self.tileID + boardCol {
+                    drawBodyUpRight()
+                } else if snake[index! + 1] == self.tileID + boardRow {
+                    drawBodyUpDown()
+                } else {
+                    drawBodyUpLeft()
+                }
+            case .Right:
+                if snake[index! + 1] == self.tileID - boardRow {
+                    drawBodyUpRight()
+                } else if snake[index! + 1] == self.tileID - boardCol {
+                    drawBodyRightLeft()
+                } else {
+                    drawBodyRightDown()
+                }
+            case .Down:
+                if snake[index! + 1] == self.tileID + boardCol {
+                    drawBodyRightDown()
+                } else if snake[index! + 1] == self.tileID - boardCol {
+                    drawBodyDownLeft()
+                } else {
+                    drawBodyUpDown()
+                }
+            case .Left:
+                if snake[index! + 1] == self.tileID + boardRow {
+                    drawBodyDownLeft()
+                } else if snake[index! + 1] == self.tileID + boardCol {
+                    drawBodyRightLeft()
+                } else {
+                    drawBodyUpLeft()
+                }
+            }
+            
+            snakeColor.setFill()
+            UIColor.black.setStroke()
+            body.close()
+            body.fill()
+            body.stroke()
         } else if isTail {
             
             let tail = UIBezierPath()
             
-            tail.move(to: CGPoint(x: 0, y: 0))
-            
             switch facing {
             case .Up:
-                tail.addLine(to: CGPoint(x: self.bounds.size.width, y: 0))
-                tail.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height))
-                tail.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: self.bounds.size.height / 2))
-                tail.addLine(to: CGPoint(x: 0, y: self.bounds.size.height))
+                tail.move(to: CGPoint(x: 0 + border, y: 0))
+                tail.addLine(to: CGPoint(x: tileWidth - border, y: 0))
+                tail.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight - border))
+                tail.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight / 2))
+                tail.addLine(to: CGPoint(x: 0 + border, y: tileHeight - border))
             case .Right:
-                tail.addLine(to: CGPoint(x: self.bounds.size.width, y: 0))
-                tail.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height))
-                tail.addLine(to: CGPoint(x: 0, y: self.bounds.size.height))
-                tail.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: self.bounds.size.height / 2))
+                tail.move(to: CGPoint(x: 0 + border, y: 0 + border))
+                tail.addLine(to: CGPoint(x: tileWidth, y: 0 + border))
+                tail.addLine(to: CGPoint(x: tileWidth, y: tileHeight - border))
+                tail.addLine(to: CGPoint(x: 0 + border, y: tileHeight - border))
+                tail.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight / 2))
             case .Down:
-                tail.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: self.bounds.size.height / 2))
-                tail.addLine(to: CGPoint(x: self.bounds.size.width, y: 0))
-                tail.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height))
-                tail.addLine(to: CGPoint(x: 0, y: self.bounds.size.height))
+                tail.move(to: CGPoint(x: 0 + border, y: 0 + border))
+                tail.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight / 2))
+                tail.addLine(to: CGPoint(x: tileWidth - border, y: 0 + border))
+                tail.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight))
+                tail.addLine(to: CGPoint(x: 0 + border, y: tileHeight))
             case .Left:
-                tail.addLine(to: CGPoint(x: self.bounds.size.width, y: 0))
-                tail.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: self.bounds.size.height / 2))
-                tail.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height))
-                tail.addLine(to: CGPoint(x: 0, y: self.bounds.size.height))
+                tail.move(to: CGPoint(x: 0, y: 0 + border))
+                tail.addLine(to: CGPoint(x: tileWidth - border, y: 0 + border))
+                tail.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight / 2))
+                tail.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight - border))
+                tail.addLine(to: CGPoint(x: 0, y: tileHeight - border))
             }
             
             tail.close()
             tail.lineWidth = 1
-            UIColor.red.setFill()
+            snakeColor.setFill()
             UIColor.black.setStroke()
             tail.fill()
             tail.stroke()
@@ -111,14 +210,15 @@ class BoardTile: UIView {
         } else if isFruit {
             
             let fruit = UIBezierPath()
-            fruit.move(to: CGPoint(x: self.bounds.size.width / 2, y: 0))
-            fruit.addLine(to: CGPoint(x: self.bounds.size.width, y: self.bounds.size.height / 2))
-            fruit.addLine(to: CGPoint(x: self.bounds.size.height / 2, y: self.bounds.size.height))
-            fruit.addLine(to: CGPoint(x: 0, y: self.bounds.size.height / 2))
-            fruit.addLine(to: CGPoint(x: self.bounds.size.width / 2, y: 0))
+            fruit.move(to: CGPoint(x: tileWidth / 2, y: 0))
+            fruit.addLine(to: CGPoint(x: tileWidth, y: tileHeight / 2))
+            fruit.addLine(to: CGPoint(x: tileHeight / 2, y: tileHeight))
+            fruit.addLine(to: CGPoint(x: 0, y: tileHeight / 2))
+            fruit.addLine(to: CGPoint(x: tileWidth / 2, y: 0))
             fruit.close()
             fruit.lineWidth = 1
-            UIColor.green.setFill()
+            let color = UIColor.init(hue: CGFloat(fruitHue), saturation: 1, brightness: 0.75, alpha: 1)
+            color.setFill()
             UIColor.yellow.setStroke()
             fruit.fill()
             fruit.stroke()

@@ -10,7 +10,11 @@ import UIKit
 
 //TODO: Check BOARDSIZE is a perfect square
 let BOARDSIZE = 64
-let GAMESPEED = 0.1
+let GAMESPEED = 0.2
+
+var snake = [Int]()
+var boardCol = 0, boardRow = 0
+var fruitHue: CGFloat = 0, snakeHue: CGFloat = 0
 
 enum Direction {
     case Up
@@ -23,7 +27,7 @@ class ViewController: UIViewController {
     var gameTimer = Timer()
     var tileSize: CGFloat = 0.0, yPos: CGFloat = 0.0
     var newDirection: Direction = .Right
-    var headID = 0, tailID = 0, fruitID = 0, snakeLength = 0, moves = 0, boardCol = 0, boardRow = 0, routeID = 0
+    var headID = 0, tailID = 0, fruitID = 0, snakeLength = 0, moves = 0, routeID = 0
     var isPaused = false
     var upSafe = false, rightSafe = false, downSafe = false, leftSafe = false
     var gameBoard = [BoardTile]()
@@ -62,15 +66,20 @@ class ViewController: UIViewController {
         
         // Add the snake:
         headID = (boardCol * 3) + boardRow
-        tailID = headID - (boardCol * 2)
-        
         gameBoard[headID].isHead = true
         gameBoard[headID].facing = newDirection
+        snake.append(headID)
+        
         gameBoard[headID - boardCol].isBody = true
         gameBoard[headID - boardCol].facing = newDirection
+        snake.append(headID - boardCol)
+        
+        tailID = headID - (boardCol * 2)
         gameBoard[tailID].isTail = true
         gameBoard[tailID].facing = newDirection
-        snakeLength = 3
+        snake.append(tailID)
+        
+        snakeLength = snake.count
         
         // Add a new fruit
         newFruit()
@@ -98,6 +107,7 @@ class ViewController: UIViewController {
                     gameBoard[i].isFruit = true
                     gameBoard[i].setNeedsDisplay()
                     fruitID = i
+                    fruitHue = CGFloat(arc4random_uniform(100)) / 100
                     isSet = true
                 }
             }
@@ -112,7 +122,64 @@ class ViewController: UIViewController {
     func gameLoop() {
         fruitAI()
         collisionAI()
-        moveTile(headID, newDirection)
+        //moveTile(headID, newDirection)
+        moveSnake()
+    }
+    
+    // Move snake
+    func moveSnake() {
+        var facing = newDirection
+        var tailFacing = gameBoard[tailID].facing
+        
+        // Update tile
+        func updateTile(_ oldID: Int, _ newID: Int) {
+            if gameBoard[oldID].isHead && !gameBoard[oldID].isTail {
+                headID = newID
+                gameBoard[headID].isHead = true
+                gameBoard[headID].facing = newDirection
+                gameBoard[oldID].isHead = false
+            } else if gameBoard[oldID].isBody {
+                gameBoard[newID].isBody = true
+                if !gameBoard[headID].isFruit {
+                    gameBoard[oldID].isBody = false
+                }
+            } else if gameBoard[oldID].isTail {
+                if gameBoard[headID].isFruit {
+                    snake.append(oldID)
+                    snakeLength = snake.count
+                    snakeHue = fruitHue
+                    newFruit()
+                } else {
+                    tailID = newID
+                    gameBoard[tailID].isTail = true
+                    gameBoard[oldID].isTail = false
+                }
+            }
+            gameBoard[newID].setNeedsDisplay()
+            gameBoard[oldID].setNeedsDisplay()
+        }
+        
+        for i in 0..<snake.count {
+            var direction = gameBoard[snake[i]].facing
+            if gameBoard[snake[i]].isTail {
+                direction = tailFacing
+            }
+            
+            switch direction {
+            case .Up:
+                snake[i] = snake[i] - boardRow
+                updateTile(snake[i] + boardRow, snake[i])
+            case .Right:
+                snake[i] = snake[i] + boardCol
+                updateTile(snake[i] - boardCol, snake[i])
+            case .Down:
+                snake[i] = snake[i] + boardRow
+                updateTile(snake[i] - boardRow, snake[i])
+            case .Left:
+                snake[i] = snake[i] - boardCol
+                updateTile(snake[i] + boardCol, snake[i])
+            }
+        }
     }
     
     // Move tile in direction:
@@ -331,6 +398,7 @@ class ViewController: UIViewController {
     func collisionAI() {
         resetChecks()
         checkDirection(newDirection)
+        gameBoard[headID].facing = newDirection
     }
     
     // Check direction is safe and change if not:
