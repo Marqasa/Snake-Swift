@@ -131,8 +131,8 @@ class ViewController: UIViewController {
         var facing = newDirection
         var tailFacing = gameBoard[tailID].facing
         
-        // Update tile
-        func updateTile(_ oldID: Int, _ newID: Int) {
+        // Update tile property values:
+        func updateTiles(_ oldID: Int, _ newID: Int) {
             if gameBoard[oldID].isHead && !gameBoard[oldID].isTail {
                 headID = newID
                 gameBoard[headID].isHead = true
@@ -159,133 +159,38 @@ class ViewController: UIViewController {
             gameBoard[oldID].setNeedsDisplay()
         }
         
-        for i in 0..<snake.count {
-            var direction = gameBoard[snake[i]].facing
-            if gameBoard[snake[i]].isTail {
+        // Move the snake to its new postion and update properties for all affected tiles
+        for (i, tileID) in snake.enumerated() {
+            
+            /*
+            Get tile direction from tileID. tailFacing is used to ensure the tail moves in the correct direction
+            in situations where the head changes the direction of the tail before it has had a chance to move.
+            */
+            var direction = gameBoard[tileID].facing
+            if gameBoard[tileID].isTail {
                 direction = tailFacing
             }
             
             switch direction {
             case .Up:
-                snake[i] = snake[i] - boardRow
-                updateTile(snake[i] + boardRow, snake[i])
+                
+                // Set snake[i] to contain the ID of the new tile
+                snake[i] -= boardRow
+                
+                // Update properties for both old and new tiles:
+                updateTiles(tileID, snake[i])
+                
             case .Right:
-                snake[i] = snake[i] + boardCol
-                updateTile(snake[i] - boardCol, snake[i])
+                snake[i] += boardCol
+                updateTiles(tileID, snake[i])
             case .Down:
-                snake[i] = snake[i] + boardRow
-                updateTile(snake[i] - boardRow, snake[i])
+                snake[i] += boardRow
+                updateTiles(tileID, snake[i])
             case .Left:
-                snake[i] = snake[i] - boardCol
-                updateTile(snake[i] + boardCol, snake[i])
+                snake[i] -= boardCol
+                updateTiles(tileID, snake[i])
             }
         }
-    }
-    
-    // Move tile in direction:
-    func moveTile(_ tileID: Int, _ direction: Direction) {
-        var hasMoved = false
-        
-        // Head:
-        if gameBoard[tileID].isHead && !gameBoard[tileID].isTail && !hasMoved {
-            
-            // Make a note of the current direction before setting a new direction:
-            let oldDirection = gameBoard[tileID].facing
-            gameBoard[tileID].facing = direction
-            
-            // Update head position with direction:
-            headID = updateTileID(tileID, direction)
-            gameBoard[headID].isHead = true
-            
-            // Check for game over:
-            if gameBoard[headID].isBody || gameBoard[headID].isWall {
-                gameOver()
-                return
-            }
-            
-            gameBoard[headID].facing = direction
-            gameBoard[headID].setNeedsDisplay()
-            gameBoard[tileID].isHead = false
-            
-            // Move the next tile in the snake:
-            hasMoved = moveNextTile(tileID, oldDirection)
-        }
-        
-        // Body:
-        if gameBoard[tileID].isBody && !hasMoved {
-            let oldDirection = gameBoard[tileID].facing
-            gameBoard[tileID].facing = direction
-            
-            // Update body position with direction:
-            let bodyID = updateTileID(tileID, direction)
-            gameBoard[bodyID].isBody = true
-            gameBoard[bodyID].facing = direction
-            gameBoard[bodyID].setNeedsDisplay()
-            gameBoard[tileID].isBody = false
-            
-            // Move the next tile in the snake:
-            hasMoved = moveNextTile(tileID, oldDirection)
-        }
-        
-        // Tail:
-        if gameBoard[tileID].isTail && !hasMoved {
-            
-            // If the snake eats a piece of fruit:
-            if gameBoard[headID].isFruit {
-                
-                // Add a new body tile, update snake length and create a new fruit:
-                gameBoard[tileID].facing = direction
-                let bodyID = updateTileID(tileID, direction)
-                gameBoard[bodyID].isBody = true
-                gameBoard[bodyID].facing = direction
-                gameBoard[bodyID].setNeedsDisplay()
-                snakeLength += 1
-                newFruit()
-                
-            } else {
-                
-                // Update tail position with direction:
-                tailID = updateTileID(tileID, direction)
-                gameBoard[tailID].isTail = true
-                gameBoard[tailID].setNeedsDisplay()
-                gameBoard[tileID].isTail = false
-                gameBoard[tileID].setNeedsDisplay()
-                
-                // Only clear direction if the head is not directly behind the tail:
-                if !gameBoard[tileID].isHead {
-                    gameBoard[tileID].facing = .Up
-                }
-            }
-        }
-    }
-    
-    // Return updated tileID:
-    func updateTileID(_ tileID: Int, _ direction: Direction) -> Int {
-        switch (direction) {
-        case .Up:
-            return tileID - boardRow
-        case .Right:
-            return tileID + boardCol
-        case .Down:
-            return tileID + boardRow
-        case .Left:
-            return tileID - boardCol
-        }
-    }
-    
-    // Move the next tile in the snake:
-    func moveNextTile(_ tileID: Int, _ direction: Direction) -> Bool {
-        switch (direction) {
-        case .Up:
-            moveTile(tileID + boardRow, .Up)
-        case .Right:
-            moveTile(tileID - boardCol, .Right)
-        case .Down:
-            moveTile(tileID - boardRow, .Down)
-        case .Left:
-            moveTile(tileID + boardCol, .Left)
-        }
-        return true
     }
     
     // A snake gotta eat!
