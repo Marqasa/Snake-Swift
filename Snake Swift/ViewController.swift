@@ -9,8 +9,8 @@
 import UIKit
 
 //TODO: Check BOARDSIZE is a perfect square
-let BOARDSIZE = 64
-let GAMESPEED = 0.2
+let BOARDSIZE = 36
+let GAMESPEED = 0.25
 
 var snake = [Int]()
 var boardCol = 0, boardRow = 0
@@ -34,6 +34,8 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        print()
         
         boardCol = Int(sqrt(Double(BOARDSIZE)))
         boardRow = 1
@@ -100,7 +102,7 @@ class ViewController: UIViewController {
         if snakeLength < (BOARDSIZE - (boardCol * 4) + 4) {
             var isSet = false
             while !isSet {
-                let i = Int(arc4random()) % BOARDSIZE
+                let i = Int(arc4random_uniform(UInt32(BOARDSIZE)))
                 
                 // Only add the fruit if the tile is free:
                 if !gameBoard[i].isWall && !gameBoard[i].isHead && !gameBoard[i].isBody && !gameBoard[i].isTail {
@@ -121,6 +123,17 @@ class ViewController: UIViewController {
     // The game loop:
     func gameLoop() {
         fruitAI()
+        if moves > snakeLength * 24  {
+            moves = 0
+        } else if moves > snakeLength * 20 {
+            newDirection = .Left
+        } else if moves > snakeLength * 16 {
+            newDirection = .Down
+        } else if moves > snakeLength * 12 {
+            newDirection = .Right
+        } else if moves > snakeLength * 8 {
+            newDirection = .Up
+        }
         collisionAI()
         //moveTile(headID, newDirection)
         moveSnake()
@@ -149,6 +162,7 @@ class ViewController: UIViewController {
                     snakeLength = snake.count
                     snakeHue = fruitHue
                     newFruit()
+                    moves = 0
                 } else {
                     tailID = newID
                     gameBoard[tailID].isTail = true
@@ -180,6 +194,7 @@ class ViewController: UIViewController {
                 updateTile(snake[i] + boardCol, snake[i])
             }
         }
+        moves += 1
     }
     
     // Move tile in direction:

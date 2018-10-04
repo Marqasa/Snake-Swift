@@ -13,8 +13,20 @@ class BoardTile: UIView {
     var upChecked = false, rightChecked = false, downChecked = false, leftChecked = false
     var facing = Direction.Up
     var tileCol = 0, tileRow = 0, tileID = 0
+    let imageView = UIImageView()
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+    }
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        imageView.frame = self.bounds
+        self.addSubview(imageView)
+    }
     
     override func draw(_ rect: CGRect) {
+        imageView.image = nil
         
         let tileWidth = self.bounds.size.width
         let tileHeight = self.bounds.size.height
@@ -37,41 +49,16 @@ class BoardTile: UIView {
             
         } else if isHead {
             
-            let head = UIBezierPath()
-            
             switch facing {
             case .Up:
-                head.move(to: CGPoint(x: 0 + border, y: tileHeight))
-                head.addLine(to: CGPoint(x: 0 + border, y: tileHeight / 2))
-                head.addLine(to: CGPoint(x: tileWidth / 2, y: 0 + border))
-                head.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight / 2))
-                head.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight))
+                imageView.image = UIImage(named: "headUp")
             case .Right:
-                head.move(to: CGPoint(x: 0 , y: 0 + border))
-                head.addLine(to: CGPoint(x: tileWidth / 2, y: 0 + border))
-                head.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight / 2))
-                head.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight - border))
-                head.addLine(to: CGPoint(x: 0, y: tileHeight - border))
+                imageView.image = UIImage(named: "headRight")
             case .Down:
-                head.move(to: CGPoint(x: 0 + border, y: 0))
-                head.addLine(to: CGPoint(x: tileWidth - border, y: 0))
-                head.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight / 2))
-                head.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight - border))
-                head.addLine(to: CGPoint(x: 0 + border, y: tileHeight / 2))
+                imageView.image = UIImage(named: "headDown")
             case .Left:
-                head.move(to: CGPoint(x: tileWidth, y: tileHeight - border))
-                head.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight - border))
-                head.addLine(to: CGPoint(x: 0 + border, y: tileHeight / 2))
-                head.addLine(to: CGPoint(x: tileWidth / 2, y: 0 + border))
-                head.addLine(to: CGPoint(x: tileWidth, y: 0 + border))
+                imageView.image = UIImage(named: "headLeft")
             }
-            
-            head.close()
-            head.lineWidth = 1
-            snakeColor.setFill()
-            UIColor.black.setStroke()
-            head.fill()
-            head.stroke()
             
         } else if isBody {
             
