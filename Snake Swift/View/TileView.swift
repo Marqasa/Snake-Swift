@@ -8,11 +8,8 @@
 
 import UIKit
 
-class BoardTile: UIView {
-    var isHead = false, isBody = false, isTail = false, isFruit = false, isWall = false
-    var upChecked = false, rightChecked = false, downChecked = false, leftChecked = false
-    var facing = Direction.Up
-    var tileCol = 0, tileRow = 0, tileID = 0
+class TileView: UIView {
+    var tile = Tile()
     
     override func draw(_ rect: CGRect) {
         
@@ -29,17 +26,17 @@ class BoardTile: UIView {
         
         let snakeColor = UIColor.init(hue: CGFloat(snakeHue), saturation: 0.5, brightness: 0.9, alpha: 1)
         
-        if isWall {
+        if tile.isWall {
             UIColor.black.setFill()
             UIColor.black.setStroke()
             context.fill(self.bounds)
             context.stroke(self.bounds)
             
-        } else if isHead {
+        } else if tile.isHead {
             
             let head = UIBezierPath()
             
-            switch facing {
+            switch tile.direction {
             case .Up:
                 head.move(to: CGPoint(x: 0 + border, y: tileHeight))
                 head.addLine(to: CGPoint(x: 0 + border, y: tileHeight / 2))
@@ -73,7 +70,7 @@ class BoardTile: UIView {
             head.fill()
             head.stroke()
             
-        } else if isBody {
+        } else if tile.isBody {
             
             let body = UIBezierPath()
             
@@ -127,41 +124,19 @@ class BoardTile: UIView {
                 body.addLine(to: CGPoint(x: 0, y: tileHeight - border))
             }
             
-            let index = snake.firstIndex(of: self.tileID)
-            
-            switch facing {
-            case .Up:
-                if snake[index! + 1] == self.tileID + boardCol {
-                    drawBodyUpRight()
-                } else if snake[index! + 1] == self.tileID + boardRow {
-                    drawBodyUpDown()
-                } else {
-                    drawBodyUpLeft()
-                }
-            case .Right:
-                if snake[index! + 1] == self.tileID - boardRow {
-                    drawBodyUpRight()
-                } else if snake[index! + 1] == self.tileID - boardCol {
-                    drawBodyRightLeft()
-                } else {
-                    drawBodyRightDown()
-                }
-            case .Down:
-                if snake[index! + 1] == self.tileID + boardCol {
-                    drawBodyRightDown()
-                } else if snake[index! + 1] == self.tileID - boardCol {
-                    drawBodyDownLeft()
-                } else {
-                    drawBodyUpDown()
-                }
-            case .Left:
-                if snake[index! + 1] == self.tileID + boardRow {
-                    drawBodyDownLeft()
-                } else if snake[index! + 1] == self.tileID + boardCol {
-                    drawBodyRightLeft()
-                } else {
-                    drawBodyUpLeft()
-                }
+            switch tile.bodyShape {
+            case .UpRight:
+                drawBodyUpRight()
+            case .UpDown:
+                drawBodyUpDown()
+            case .UpLeft:
+                drawBodyUpLeft()
+            case .RightDown:
+                drawBodyRightDown()
+            case .RightLeft:
+                drawBodyRightLeft()
+            case .DownLeft:
+                drawBodyDownLeft()
             }
             
             snakeColor.setFill()
@@ -169,11 +144,11 @@ class BoardTile: UIView {
             body.close()
             body.fill()
             body.stroke()
-        } else if isTail {
+        } else if tile.isTail {
             
             let tail = UIBezierPath()
             
-            switch facing {
+            switch tile.direction {
             case .Up:
                 tail.move(to: CGPoint(x: 0 + border, y: 0))
                 tail.addLine(to: CGPoint(x: tileWidth - border, y: 0))
@@ -207,7 +182,7 @@ class BoardTile: UIView {
             tail.fill()
             tail.stroke()
             
-        } else if isFruit {
+        } else if tile.isFruit {
             
             let fruit = UIBezierPath()
             fruit.move(to: CGPoint(x: tileWidth / 2, y: 0))
