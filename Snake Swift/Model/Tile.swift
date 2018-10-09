@@ -9,7 +9,9 @@
 import Foundation
 
 struct Tile {
+    var type = TileType.Empty
     var isHead = false, isBody = false, isTail = false, isWall = false, isFruit = false, wasTail = false
+    var col = 0, row = 0
     var direction = Direction.Up
     var bodyShape = BodyShape.RightLeft
 }

@@ -12,4 +12,5 @@ struct Path {
     var route = [Direction]()
     var findsTail = false
     var findsFruit = false
+    var findsFruitAndTail = false
 }

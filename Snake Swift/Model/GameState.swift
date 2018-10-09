@@ -14,6 +14,67 @@ struct GameState {
     var board = [Tile]()
     var snake = [Int]()
     var needsDisplay = Set<Int>()
+    var emptyTiles = Set<Int>()
+    
+    var headID = 0
+    var tailID = 0
+    var fruitID = 0
+    
+    // Returns true if the snake is smaller than the playable board space
+    var boardHasSpace: Bool {
+        return snake.count < (board.count - (boardCol * 4) + 4)
+    }
+    
+    var head: Tile {
+        return board[snake[0]]
+    }
+    
+    var tail: Tile {
+        return board[snake.endIndex - 1]
+    }
+    
+    var fruitIsBelow: Bool {
+        return board[fruitID].row > board[headID].row
+    }
+    
+    var fruitIsToTheRight: Bool {
+        return board[fruitID].col > board[headID].col
+    }
+    
+    var fruitIsAbove: Bool {
+        return board[fruitID].row < board[headID].row
+    }
+    
+    var fruitIsToTheLeft: Bool {
+        return board[fruitID].col < board[headID].col
+    }
+    
+    var tailIsBelow: Bool {
+        return board[tailID].row > board[headID].row
+    }
+    
+    var tailIsToTheRight: Bool {
+        return board[tailID].col > board[headID].col
+    }
+    
+    var tailIsAbove: Bool {
+        return board[tailID].row < board[headID].row
+    }
+    
+    var tailIsToTheLeft: Bool {
+        return board[tailID].col < board[headID].col
+    }
+    
+    //TODO: Use this function when spawing a new fruit. Requires tile types to be updated first.
+    mutating func findEmptyTiles() {
+        for (i, t) in board.enumerated() {
+            if t.type == .Empty {
+                emptyTiles.insert(i)
+            } else {
+                emptyTiles.remove(i)
+            }
+        }
+    }
     
     mutating func update(live: Bool) {
         
@@ -28,12 +89,14 @@ struct GameState {
             
             if board[oldID].isHead && !board[oldID].isTail {
                 
+                headID = newID
                 board[newID].isHead = true
                 board[newID].direction = board[oldID].direction
                 board[oldID].isHead = false
                 
             } else if board[oldID].isBody {
                 
+                // Only do bodyShape calculations for live updates:
                 if live {
                     switch board[newID].direction {
                     case .Up:
@@ -72,9 +135,17 @@ struct GameState {
                 }
                 
                 board[newID].isBody = true
-                if !board[snake[0]].isFruit {
+                
+                // If the fruit exists and the head is not the fruit - the snake doesn't grow
+                if !boardHasSpace {
+                    board[oldID].isBody = false
+                } else if board[fruitID].isFruit && !board[snake[0]].isFruit {
                     board[oldID].isBody = false
                 }
+                
+//                if !board[snake[0]].isFruit {
+//                    board[oldID].isBody = false
+//                }
                 
             } else if board[oldID].isTail {
                 
@@ -89,12 +160,18 @@ struct GameState {
                     
                     if live {
                         needsDisplay.insert(newFruit())
+                        shortestPath = []
                     }
                     
                     // Else move the tail:
                 } else {
-                    board[newID].isTail = true
-                    board[oldID].isTail = false
+                    if boardHasSpace && !board[fruitID].isFruit {
+                        snake.append(oldID)
+                    } else {
+                        tailID = newID
+                        board[newID].isTail = true
+                        board[oldID].isTail = false
+                    }
                 }
             }
             
@@ -138,8 +215,7 @@ struct GameState {
         shortestPath = []
         
         // Only add a new fruit if there is still space on the board:
-        if snake.count < (board.count - (boardCol * 4) + 4) {
-            var isSet = false
+        if boardHasSpace {
             repeat {
                 let i = Int(arc4random()) % board.count
                 
@@ -147,10 +223,10 @@ struct GameState {
                 if !board[i].isWall && !board[i].isHead && !board[i].isBody && !board[i].isTail {
                     board[i].isFruit = true
                     fruitHue = CGFloat(arc4random_uniform(100) / 100)
-                    isSet = true
+                    fruitID = i
                     return i
                 }
-            } while !isSet
+            } while true
         } else {
             //TODO: Add victory screen
             print("You Win!")
