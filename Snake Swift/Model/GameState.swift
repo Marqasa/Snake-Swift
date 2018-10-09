@@ -65,17 +65,6 @@ struct GameState {
         return board[tailID].col < board[headID].col
     }
     
-    //TODO: Use this function when spawing a new fruit. Requires tile types to be updated first.
-    mutating func findEmptyTiles() {
-        for (i, t) in board.enumerated() {
-            if t.type == .Empty {
-                emptyTiles.insert(i)
-            } else {
-                emptyTiles.remove(i)
-            }
-        }
-    }
-    
     mutating func update(live: Bool) {
         
         // Remember initial tail direction
@@ -160,7 +149,7 @@ struct GameState {
                     
                     if live {
                         needsDisplay.insert(newFruit())
-                        shortestPath = []
+                        shortestPath = Path()
                     }
                     
                     // Else move the tail:
@@ -212,7 +201,7 @@ struct GameState {
     
     mutating func newFruit() -> Int {
         // Clear path when a new fruit is spawned
-        shortestPath = []
+        shortestPath = Path()
         
         // Only add a new fruit if there is still space on the board:
         if boardHasSpace {

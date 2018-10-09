@@ -13,7 +13,7 @@ let GAMESPEED = 0.2
 //TODO: Are all these Globals necessary?
 var boardCol = 0, boardRow = 0
 var fruitHue: CGFloat = 0, snakeHue: CGFloat = 0
-var shortestPath = [Direction]()
+var shortestPath = Path()
 //{
 //    didSet {
 //        print("New shortest path found:\n \(shortestPath)")
@@ -40,17 +40,8 @@ enum BodyShape {
     case RightLeft
     case DownLeft
 }
-enum TileType: Equatable {
-    case Wall
-    case Head(Direction)
-    case Body(Direction, BodyShape)
-    case Tail(Direction)
-    case Fruit
-    case Empty
-    indirect case Dual(TileType, TileType)
-}
 
-//TODO: Create a tile type enum
+//TODO: Create a tile type enum (first attempt ran into problems with comparing associated values)
 
 class ViewController: UIViewController {
     let boardSize = BoardSize.Medium
@@ -86,7 +77,6 @@ class ViewController: UIViewController {
                 
                 // Check if the tile is a wall
                 if y == 0 || x == 0 || x == boardCol - 1 || y == boardCol - 1 {
-                    tile.type = .Wall
                     tile.isWall = true
                 }
                 
@@ -103,14 +93,12 @@ class ViewController: UIViewController {
         let headID = boardRow + (boardCol * 3)
         gameState.headID = headID
         gameState.board[headID].isHead = true
-        gameState.board[headID].type = .Head(.Right)
         gameState.board[headID].direction = .Right
         gameState.snake.append(headID)
         gameView[headID].tile = gameState.board[headID]
         
         let bodyID = headID - boardCol
         gameState.board[bodyID].isBody = true
-        gameState.board[bodyID].type = .Body(.Right, .RightLeft)
         gameState.board[bodyID].direction = .Right
         gameState.board[bodyID].bodyShape = .RightLeft
         gameState.snake.append(bodyID)
@@ -119,7 +107,6 @@ class ViewController: UIViewController {
         let tailID = headID - (boardCol * 2)
         gameState.tailID = tailID
         gameState.board[tailID].isTail = true
-        gameState.board[tailID].type = .Tail(.Right)
         gameState.board[tailID].direction = .Right
         gameState.snake.append(tailID)
         gameView[tailID].tile = gameState.board[tailID]
@@ -136,14 +123,16 @@ class ViewController: UIViewController {
         
     // The game loop:
     func gameLoop() {
-        if shortestPath.isEmpty {
+        if shortestPath.route.isEmpty || !shortestPath.findsFruit {
+            Path.currentNumberSafePaths = 0
+            shortestPath = Path()
             longestPath = []
-            findPaths(centreTile: gameState.snake[0], Path(), state: gameState)
+            findPaths(centreTile: gameState.snake[0], Path(), state: gameState, lookahead: boardSize.rawValue * 2)
         }
         
-        if !shortestPath.isEmpty {
-            newDirection = shortestPath[0]
-            shortestPath.remove(at: 0)
+        if !shortestPath.route.isEmpty {
+            newDirection = shortestPath.route[0]
+            shortestPath.route.remove(at: 0)
         } else if !longestPath.isEmpty {
             newDirection = longestPath[0]
             longestPath.remove(at: 0)
@@ -163,25 +152,22 @@ class ViewController: UIViewController {
         }
     }
     
-    func findPaths(centreTile: Int, _ path: Path, state: GameState) {
-        if !shortestPath.isEmpty {
-            if path.route.count > shortestPath.count {
+    //TODO: Add max lookahead to improve performance
+    func findPaths(centreTile: Int, _ path: Path, state: GameState, lookahead: Int) {
+        print("Safe paths found = \(Path.currentNumberSafePaths)")
+        if shortestPath.moves > 0 {
+//            print("Moves: \(shortestPath.moves)")
+            if path.moves >= shortestPath.moves {
                 return
             }
         }
-//        print("Snake position is: \(state.snake)")
-        if path.route.count > (state.snake.count * 2) {
-//            print("Path too long")
+        if path.route.count > lookahead {
+            print("Lookahead reached:\n\(path.route)")
+            shortestPath = path
+        }
+        if Path.currentNumberSafePaths >= Path.maxNumberSafePaths {
             return
         }
-//        if !shortestPath.isEmpty {
-//            return
-//        }
-//        print("Searching for path from tile \(centreTile)")
-        
-//        if !shortestPath.isEmpty && path.route.count > shortestPath.count {
-//            return
-//        }
         
         var middleTile = centreTile
         var upTile = 0, rightTile = 0, downTile = 0, leftTile = 0
@@ -203,16 +189,11 @@ class ViewController: UIViewController {
         }
         
         func tileIsTail(_ tileID: Int) -> Bool {
-            if state.board[tileID].isTail || (state.board[tileID].wasTail && !state.board[tileID].isBody) {
+            if state.board[tileID].isTail {
                 return true
             } else {
                 return false
             }
-//            if state.board[tileID].isTail || state.board[tileID].wasTail {
-//                return true
-//            } else {
-//                return false
-//            }
         }
         
         func tileIsFruit(_ tileID: Int) -> Bool {
@@ -296,193 +277,61 @@ class ViewController: UIViewController {
             }
         }
         
+        // Check tile in direction:
+        func checkTile(tileID: Int, direction: Direction) -> Bool {
+            
+            // If tile is safe:
+            if tileIsSafe(tileID) {
+                var tempState = state
+                var tempPath = path
+                tempPath.route.append(direction)
+                tempPath.move()
+                
+                // Check for tail:
+                if tileIsTail(tileID) {
+                    tempPath.findsTail = true
+                    if tempPath.findsFruit {
+                        tempPath.findsFruitAndTail = true
+                    }
+                }
+                
+                // Check for fruit:
+                if tileIsFruit(tileID) {
+                    tempPath.findsFruit = true
+                }
+                
+                // If path finds fruit and tail, update shortest path and return true:
+                if tempPath.findsFruitAndTail {
+                    shortestPath = tempPath
+                    Path.currentNumberSafePaths += 1
+                    return true
+                }
+                    //TODO: Optimize longestPath to improve performance
+                else if tempPath.findsTail {
+                    if tempPath.route.count > longestPath.count {
+                        longestPath = tempPath.route
+                    }
+                }
+                
+                middleTile = tileID
+                tempState.board[tempState.snake[0]].direction = direction
+                tempState.update(live: false)
+                findPaths(centreTile: middleTile, tempPath, state: tempState, lookahead: lookahead)
+            }
+            return false
+        }
+        
         allDirections: for direction in sortedDirections {
-//            if !shortestPath.isEmpty {
-//                return
-//            }
+
             switch direction {
             case .Up:
-                if tileIsSafe(upTile) {
-                    var tempState = state
-                    var pathUp = path
-                    
-                    if tileIsTail(upTile) {
-                        pathUp.findsTail = true
-                        if path.findsFruit {
-//                            print("Path found tail at \(upTile)")
-                            pathUp.findsFruitAndTail = true
-                        }
-                    }
-                    
-                    if tileIsFruit(upTile) {
-//                        print("Path found fruit at \(upTile)")
-                        pathUp.findsFruit = true
-//                        tempState.allFruit()
-                    }
-                    
-                    pathUp.route.append(.Up)
-                    
-                    if pathUp.findsFruitAndTail {
-                        if !shortestPath.isEmpty {
-                            if pathUp.route.count < shortestPath.count {
-                                shortestPath = pathUp.route
-                            }
-                        } else {
-                            shortestPath = pathUp.route
-                        }
-                        break allDirections
-                        
-                        //TODO: Path currently isn't marked as finding the tail until after the fruit is found
-                    } else if pathUp.findsTail {
-                        if pathUp.route.count > longestPath.count {
-                            longestPath = pathUp.route
-                        }
-//                        continue allDirections
-                    }
-                    
-                    middleTile = upTile
-                    tempState.board[tempState.snake[0]].direction = .Up
-//                    if let tail = tempState.snake.last {
-//                        tempState.board[tail].wasTail = true
-//                    }
-                    tempState.update(live: false)
-                    findPaths(centreTile: middleTile, pathUp, state: tempState)
-                }
+                if checkTile(tileID: upTile, direction: .Up) { break allDirections }
             case .Right:
-                if tileIsSafe(rightTile) {
-                    var tempState = state
-                    var pathRight = path
-                    
-                    if tileIsTail(rightTile) {
-                        pathRight.findsTail = true
-                        if path.findsFruit {
-//                            print("Path found tail at \(rightTile)")
-                            pathRight.findsFruitAndTail = true
-                        }
-                    }
-                    
-                    if tileIsFruit(rightTile) {
-//                        print("Path found fruit at \(rightTile)")
-                        pathRight.findsFruit = true
-//                        tempState.allFruit()
-                    }
-                    
-                    pathRight.route.append(.Right)
-                    
-                    if pathRight.findsFruitAndTail {
-                        if !shortestPath.isEmpty {
-                            if pathRight.route.count < shortestPath.count {
-                                shortestPath = pathRight.route
-                            }
-                        } else {
-                            shortestPath = pathRight.route
-                        }
-                        break allDirections
-                    } else if pathRight.findsTail {
-                        if pathRight.route.count > longestPath.count {
-                            longestPath = pathRight.route
-                        }
-//                        continue allDirections
-                    }
-                    
-                    middleTile = rightTile
-                    tempState.board[tempState.snake[0]].direction = .Right
-//                    if let tail = tempState.snake.last {
-//                        tempState.board[tail].wasTail = true
-//                    }
-                    tempState.update(live: false)
-                    findPaths(centreTile: rightTile, pathRight, state: tempState)
-                }
+                if checkTile(tileID: rightTile, direction: .Right) { break allDirections }
             case .Down:
-                if tileIsSafe(downTile) {
-                    var tempState = state
-                    var pathDown = path
-                    
-                    if tileIsTail(downTile) {
-                        pathDown.findsTail = true
-                        if path.findsFruit {
-//                            print("Path found tail at \(downTile)")
-                            pathDown.findsFruitAndTail = true
-                        }
-                    }
-                    
-                    if tileIsFruit(downTile) {
-//                        print("Path found fruit at \(downTile)")
-                        pathDown.findsFruit = true
-//                        tempState.allFruit()
-                    }
-                    
-                    pathDown.route.append(.Down)
-                    
-                    if pathDown.findsFruitAndTail {
-                        if !shortestPath.isEmpty {
-                            if pathDown.route.count < shortestPath.count {
-                                shortestPath = pathDown.route
-                            }
-                        } else {
-                            shortestPath = pathDown.route
-                        }
-                        break allDirections
-                    } else if pathDown.findsTail {
-                        if pathDown.route.count > longestPath.count {
-                            longestPath = pathDown.route
-                        }
-//                        continue allDirections
-                    }
-                    
-                    middleTile = downTile
-                    tempState.board[tempState.snake[0]].direction = .Down
-//                    if let tail = tempState.snake.last {
-//                        tempState.board[tail].wasTail = true
-//                    }
-                    tempState.update(live: false)
-                    findPaths(centreTile: downTile, pathDown, state: tempState)
-                }
+                if checkTile(tileID: downTile, direction: .Down) { break allDirections }
             case .Left:
-                if tileIsSafe(leftTile) {
-                    var tempState = state
-                    var pathLeft = path
-                    
-                    if tileIsTail(leftTile) {
-                        pathLeft.findsTail = true
-                        if path.findsFruit {
-//                            print("Path found tail at \(leftTile)")
-                            pathLeft.findsFruitAndTail = true
-                        }
-                    }
-                    
-                    if tileIsFruit(leftTile) {
-//                        print("Path found fruit at \(leftTile)")
-                        pathLeft.findsFruit = true
-//                        tempState.allFruit()
-                    }
-                    
-                    pathLeft.route.append(.Left)
-                    
-                    if pathLeft.findsFruitAndTail {
-                        if !shortestPath.isEmpty {
-                            if pathLeft.route.count < shortestPath.count {
-                                shortestPath = pathLeft.route
-                            }
-                        } else {
-                            shortestPath = pathLeft.route
-                        }
-                        break allDirections
-                    } else if pathLeft.findsTail {
-                        if pathLeft.route.count > longestPath.count {
-                            longestPath = pathLeft.route
-                        }
-//                        continue allDirections
-                    }
-                    
-                    middleTile = leftTile
-                    tempState.board[tempState.snake[0]].direction = .Left
-//                    if let tail = tempState.snake.last {
-//                        tempState.board[tail].wasTail = true
-//                    }
-                    tempState.update(live: false)
-                    findPaths(centreTile: leftTile, pathLeft, state: tempState)
-                }
+                if checkTile(tileID: leftTile, direction: .Left) { break allDirections }
             }
         }
     }
