@@ -8,40 +8,12 @@
 
 import UIKit
 
-let GAMESPEED = 0.2
+let GAMESPEED = 0.1
 
 //TODO: Are all these Globals necessary?
 var boardCol = 0, boardRow = 0
 var fruitHue: CGFloat = 0, snakeHue: CGFloat = 0
 var shortestPath = Path()
-//{
-//    didSet {
-//        print("New shortest path found:\n \(shortestPath)")
-//    }
-//}
-
-enum Direction: CaseIterable {
-    case Up
-    case Right
-    case Down
-    case Left
-}
-enum BoardSize: Int {
-    case Tiny = 25
-    case Small = 36
-    case Medium = 64
-    case Large = 100
-}
-enum BodyShape {
-    case UpRight
-    case UpDown
-    case UpLeft
-    case RightDown
-    case RightLeft
-    case DownLeft
-}
-
-//TODO: Create a tile type enum (first attempt ran into problems with comparing associated values)
 
 class ViewController: UIViewController {
     let boardSize = BoardSize.Medium
@@ -77,7 +49,7 @@ class ViewController: UIViewController {
                 
                 // Check if the tile is a wall
                 if y == 0 || x == 0 || x == boardCol - 1 || y == boardCol - 1 {
-                    tile.isWall = true
+                    tile.type = .Wall
                 }
                 
                 gameState.board.append(tile)
@@ -92,22 +64,18 @@ class ViewController: UIViewController {
         // Add the snake:
         let headID = boardRow + (boardCol * 3)
         gameState.headID = headID
-        gameState.board[headID].isHead = true
-        gameState.board[headID].direction = .Right
+        gameState.board[headID].type = .Head(.Right)
         gameState.snake.append(headID)
         gameView[headID].tile = gameState.board[headID]
         
         let bodyID = headID - boardCol
-        gameState.board[bodyID].isBody = true
-        gameState.board[bodyID].direction = .Right
-        gameState.board[bodyID].bodyShape = .RightLeft
+        gameState.board[bodyID].type = .Body(.Right, .RightLeft)
         gameState.snake.append(bodyID)
         gameView[bodyID].tile = gameState.board[bodyID]
         
         let tailID = headID - (boardCol * 2)
         gameState.tailID = tailID
-        gameState.board[tailID].isTail = true
-        gameState.board[tailID].direction = .Right
+        gameState.board[tailID].type = .Tail(.Right)
         gameState.snake.append(tailID)
         gameView[tailID].tile = gameState.board[tailID]
         
@@ -123,11 +91,12 @@ class ViewController: UIViewController {
         
     // The game loop:
     func gameLoop() {
-        if shortestPath.route.isEmpty || !shortestPath.findsFruit {
+        if shortestPath.route.isEmpty || !shortestPath.findsTail {
             Path.currentNumberSafePaths = 0
             shortestPath = Path()
             longestPath = []
-            findPaths(centreTile: gameState.snake[0], Path(), state: gameState, lookahead: boardSize.rawValue * 2)
+            var counter = 0
+            findPaths(centreTile: gameState.snake[0], Path(), state: gameState, lookahead: 0, debugCounter: &counter)
         }
         
         if !shortestPath.route.isEmpty {
@@ -138,8 +107,11 @@ class ViewController: UIViewController {
             longestPath.remove(at: 0)
         }
         
-        gameState.board[gameState.snake[0]].direction = newDirection
+        gameState.head = .Head(newDirection)
         gameState.update(live: true)
+        if gameState.gameOver {
+            gameOver()
+        }
         
         updateGameView()
     }
@@ -152,22 +124,41 @@ class ViewController: UIViewController {
         }
     }
     
-    //TODO: Add max lookahead to improve performance
-    func findPaths(centreTile: Int, _ path: Path, state: GameState, lookahead: Int) {
-        print("Safe paths found = \(Path.currentNumberSafePaths)")
-        if shortestPath.moves > 0 {
-//            print("Moves: \(shortestPath.moves)")
-            if path.moves >= shortestPath.moves {
+    func findPaths(centreTile: Int, _ path: Path, state: GameState, lookahead: Int, debugCounter: inout Int) {
+        if shortestPath.route.isEmpty && !path.route.isEmpty {
+            shortestPath = path
+        }
+        if lookahead >= 100 {
+            if !shortestPath.findsTail && path.findsTail {
+                shortestPath = path
+            }
+            return
+        }
+        debugCounter += 1
+        
+        
+        // End search if shortestPath is already optimal or if current path is longer than shortestPath
+        if shortestPath.findsFruitAndTail {
+            if shortestPath.moves < gameState.fruitDistance || path.moves >= shortestPath.moves {
                 return
             }
         }
-        if path.route.count > lookahead {
-            print("Lookahead reached:\n\(path.route)")
+        if gameState.fruitID == 0 && path.findsTail {
             shortestPath = path
-        }
-        if Path.currentNumberSafePaths >= Path.maxNumberSafePaths {
             return
         }
+//        if path.route.count > lookahead {
+//            shortestPath = path
+//            return
+//        }
+//        if debugCounter > 1000 {
+//            if shortestPath.route.isEmpty && path.findsTail {
+//                shortestPath = path
+//                return
+//            } else if !shortestPath.route.isEmpty {
+//                return
+//            }
+//        }
         
         var middleTile = centreTile
         var upTile = 0, rightTile = 0, downTile = 0, leftTile = 0
@@ -177,31 +168,6 @@ class ViewController: UIViewController {
             rightTile = tileInDirection(tileID, .Right)
             downTile = tileInDirection(tileID, .Down)
             leftTile = tileInDirection(tileID, .Left)
-        }
-        
-        func tileIsSafe(_ tileID: Int) -> Bool {
-            if state.board[tileID].isWall || state.board[tileID].isBody {
-//                print("Tile not safe: \(tileID)")
-                return false
-            } else {
-                return true
-            }
-        }
-        
-        func tileIsTail(_ tileID: Int) -> Bool {
-            if state.board[tileID].isTail {
-                return true
-            } else {
-                return false
-            }
-        }
-        
-        func tileIsFruit(_ tileID: Int) -> Bool {
-            if state.board[tileID].isFruit {
-                return true
-            } else {
-                return false
-            }
         }
         
         setAdjacentTileIDs(centreTile)
@@ -279,45 +245,47 @@ class ViewController: UIViewController {
         
         // Check tile in direction:
         func checkTile(tileID: Int, direction: Direction) -> Bool {
+            var tempState = state
+            var tempPath = path
+            var depth = lookahead
             
-            // If tile is safe:
-            if tileIsSafe(tileID) {
-                var tempState = state
-                var tempPath = path
-                tempPath.route.append(direction)
-                tempPath.move()
-                
-                // Check for tail:
-                if tileIsTail(tileID) {
-                    tempPath.findsTail = true
-                    if tempPath.findsFruit {
-                        tempPath.findsFruitAndTail = true
-                    }
+            // Check tile type:
+            switch state.board[tileID].type {
+            case .Wall, .Body(_, _):
+                return false
+            case .Tail(_):
+                tempPath.findsTail = true
+                if tempPath.findsFruit {
+                    tempPath.findsFruitAndTail = true
                 }
-                
-                // Check for fruit:
-                if tileIsFruit(tileID) {
-                    tempPath.findsFruit = true
-                }
-                
-                // If path finds fruit and tail, update shortest path and return true:
-                if tempPath.findsFruitAndTail {
-                    shortestPath = tempPath
-                    Path.currentNumberSafePaths += 1
-                    return true
-                }
-                    //TODO: Optimize longestPath to improve performance
-                else if tempPath.findsTail {
-                    if tempPath.route.count > longestPath.count {
-                        longestPath = tempPath.route
-                    }
-                }
-                
-                middleTile = tileID
-                tempState.board[tempState.snake[0]].direction = direction
-                tempState.update(live: false)
-                findPaths(centreTile: middleTile, tempPath, state: tempState, lookahead: lookahead)
+            case .Fruit:
+                tempPath.findsFruit = true
+            default:
+                break
             }
+            
+            tempPath.route.append(direction)
+            tempPath.move()
+            
+            // If path finds fruit and tail, update shortest path and return true:
+            if tempPath.findsFruitAndTail {
+                shortestPath = tempPath
+                Path.currentNumberSafePaths += 1
+                return true
+            }
+                //TODO: Optimize longestPath to improve performance
+            else if tempPath.findsTail {
+                if tempPath.route.count > longestPath.count {
+                    longestPath = tempPath.route
+                }
+            }
+            
+            middleTile = tileID
+            tempState.head = .Head(direction)
+            tempState.update(live: false)
+            depth += 1
+            findPaths(centreTile: middleTile, tempPath, state: tempState, lookahead: depth, debugCounter: &debugCounter)
+            
             return false
         }
         

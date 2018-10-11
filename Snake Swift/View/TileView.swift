@@ -26,17 +26,19 @@ class TileView: UIView {
         
         let snakeColor = UIColor.init(hue: CGFloat(snakeHue), saturation: 0.5, brightness: 0.9, alpha: 1)
         
-        if tile.isWall {
+        switch tile.type {
+        case .Wall:
+            
             UIColor.black.setFill()
             UIColor.black.setStroke()
             context.fill(self.bounds)
             context.stroke(self.bounds)
             
-        } else if tile.isHead {
+        case .Head(let direction):
             
             let head = UIBezierPath()
             
-            switch tile.direction {
+            switch direction {
             case .Up:
                 head.move(to: CGPoint(x: 0 + border, y: tileHeight))
                 head.addLine(to: CGPoint(x: 0 + border, y: tileHeight / 2))
@@ -70,7 +72,7 @@ class TileView: UIView {
             head.fill()
             head.stroke()
             
-        } else if tile.isBody {
+        case .Body(_, let bodyShape):
             
             let body = UIBezierPath()
             
@@ -124,7 +126,7 @@ class TileView: UIView {
                 body.addLine(to: CGPoint(x: 0, y: tileHeight - border))
             }
             
-            switch tile.bodyShape {
+            switch bodyShape {
             case .UpRight:
                 drawBodyUpRight()
             case .UpDown:
@@ -144,11 +146,12 @@ class TileView: UIView {
             body.close()
             body.fill()
             body.stroke()
-        } else if tile.isTail {
+            
+        case .Tail(let direction):
             
             let tail = UIBezierPath()
             
-            switch tile.direction {
+            switch direction {
             case .Up:
                 tail.move(to: CGPoint(x: 0 + border, y: 0))
                 tail.addLine(to: CGPoint(x: tileWidth - border, y: 0))
@@ -182,7 +185,7 @@ class TileView: UIView {
             tail.fill()
             tail.stroke()
             
-        } else if tile.isFruit {
+        case .Fruit:
             
             let fruit = UIBezierPath()
             fruit.move(to: CGPoint(x: tileWidth / 2, y: 0))
@@ -198,6 +201,8 @@ class TileView: UIView {
             fruit.fill()
             fruit.stroke()
             
+        default:
+            break
         }
     }
 }

@@ -9,7 +9,7 @@
 import Foundation
 
 struct Path {
-    static var maxNumberSafePaths = 5
+    static var maxNumberSafePaths = 10
     static var currentNumberSafePaths = 0
     
     var route = [Direction]()
