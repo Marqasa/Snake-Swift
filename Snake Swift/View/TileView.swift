@@ -27,37 +27,37 @@ class TileView: UIView {
         let snakeColor = UIColor.init(hue: CGFloat(snakeHue), saturation: 0.5, brightness: 0.9, alpha: 1)
         
         switch tile.type {
-        case .Wall:
+        case .wall:
             
             UIColor.black.setFill()
             UIColor.black.setStroke()
             context.fill(self.bounds)
             context.stroke(self.bounds)
             
-        case .Head(let direction):
+        case let .head(direction, color):
             
             let head = UIBezierPath()
             
             switch direction {
-            case .Up:
+            case .up:
                 head.move(to: CGPoint(x: 0 + border, y: tileHeight))
                 head.addLine(to: CGPoint(x: 0 + border, y: tileHeight / 2))
                 head.addLine(to: CGPoint(x: tileWidth / 2, y: 0 + border))
                 head.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight / 2))
                 head.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight))
-            case .Right:
+            case .right:
                 head.move(to: CGPoint(x: 0 , y: 0 + border))
                 head.addLine(to: CGPoint(x: tileWidth / 2, y: 0 + border))
                 head.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight / 2))
                 head.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight - border))
                 head.addLine(to: CGPoint(x: 0, y: tileHeight - border))
-            case .Down:
+            case .down:
                 head.move(to: CGPoint(x: 0 + border, y: 0))
                 head.addLine(to: CGPoint(x: tileWidth - border, y: 0))
                 head.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight / 2))
                 head.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight - border))
                 head.addLine(to: CGPoint(x: 0 + border, y: tileHeight / 2))
-            case .Left:
+            case .left:
                 head.move(to: CGPoint(x: tileWidth, y: tileHeight - border))
                 head.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight - border))
                 head.addLine(to: CGPoint(x: 0 + border, y: tileHeight / 2))
@@ -67,12 +67,12 @@ class TileView: UIView {
             
             head.close()
             head.lineWidth = 1
-            snakeColor.setFill()
+            color.setFill()
             UIColor.black.setStroke()
             head.fill()
             head.stroke()
             
-        case .Body(_, let bodyShape):
+        case let .body(_, bodyShape, bodyColor):
             
             let body = UIBezierPath()
             
@@ -127,50 +127,50 @@ class TileView: UIView {
             }
             
             switch bodyShape {
-            case .UpRight:
+            case .upRight:
                 drawBodyUpRight()
-            case .UpDown:
+            case .upDown:
                 drawBodyUpDown()
-            case .UpLeft:
+            case .upLeft:
                 drawBodyUpLeft()
-            case .RightDown:
+            case .rightDown:
                 drawBodyRightDown()
-            case .RightLeft:
+            case .rightLeft:
                 drawBodyRightLeft()
-            case .DownLeft:
+            case .downLeft:
                 drawBodyDownLeft()
             }
             
-            snakeColor.setFill()
+            bodyColor.setFill()
             UIColor.black.setStroke()
             body.close()
             body.fill()
             body.stroke()
             
-        case .Tail(let direction):
+        case let .tail(direction, color):
             
             let tail = UIBezierPath()
             
             switch direction {
-            case .Up:
+            case .up:
                 tail.move(to: CGPoint(x: 0 + border, y: 0))
                 tail.addLine(to: CGPoint(x: tileWidth - border, y: 0))
                 tail.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight - border))
                 tail.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight / 2))
                 tail.addLine(to: CGPoint(x: 0 + border, y: tileHeight - border))
-            case .Right:
+            case .right:
                 tail.move(to: CGPoint(x: 0 + border, y: 0 + border))
                 tail.addLine(to: CGPoint(x: tileWidth, y: 0 + border))
                 tail.addLine(to: CGPoint(x: tileWidth, y: tileHeight - border))
                 tail.addLine(to: CGPoint(x: 0 + border, y: tileHeight - border))
                 tail.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight / 2))
-            case .Down:
+            case .down:
                 tail.move(to: CGPoint(x: 0 + border, y: 0 + border))
                 tail.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight / 2))
                 tail.addLine(to: CGPoint(x: tileWidth - border, y: 0 + border))
                 tail.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight))
                 tail.addLine(to: CGPoint(x: 0 + border, y: tileHeight))
-            case .Left:
+            case .left:
                 tail.move(to: CGPoint(x: 0, y: 0 + border))
                 tail.addLine(to: CGPoint(x: tileWidth - border, y: 0 + border))
                 tail.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight / 2))
@@ -180,12 +180,12 @@ class TileView: UIView {
             
             tail.close()
             tail.lineWidth = 1
-            snakeColor.setFill()
+            color.setFill()
             UIColor.black.setStroke()
             tail.fill()
             tail.stroke()
             
-        case .Fruit:
+        case .fruit(let color):
             
             let fruit = UIBezierPath()
             fruit.move(to: CGPoint(x: tileWidth / 2, y: 0))
@@ -195,7 +195,6 @@ class TileView: UIView {
             fruit.addLine(to: CGPoint(x: tileWidth / 2, y: 0))
             fruit.close()
             fruit.lineWidth = 1
-            let color = UIColor.init(hue: CGFloat(fruitHue), saturation: 1, brightness: 0.75, alpha: 1)
             color.setFill()
             UIColor.yellow.setStroke()
             fruit.fill()

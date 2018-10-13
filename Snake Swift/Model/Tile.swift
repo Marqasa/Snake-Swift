@@ -9,6 +9,6 @@
 import Foundation
 
 struct Tile {
-    var type = TileType.Empty
+    var type = TileType.empty
     var col = 0, row = 0
 }
