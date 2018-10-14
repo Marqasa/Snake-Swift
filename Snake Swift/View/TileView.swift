@@ -24,13 +24,11 @@ class TileView: UIView {
         context.fill(self.bounds)
         context.stroke(self.bounds)
         
-        let snakeColor = UIColor.init(hue: CGFloat(snakeHue), saturation: 0.5, brightness: 0.9, alpha: 1)
-        
-        switch tile.type {
+        switch tile.kind {
         case .wall:
             
             UIColor.black.setFill()
-            UIColor.black.setStroke()
+            UIColor.gray.setStroke()
             context.fill(self.bounds)
             context.stroke(self.bounds)
             

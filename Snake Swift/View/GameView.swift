@@ -17,23 +17,25 @@ struct GameView {
         self.gameView = Array(repeating: TileView(), count: size * size)
     }
     
-    subscript(i: Int) -> TileView {
-        get {
-            return gameView[i]
-        }
+    // Subscript to access gameView[i]
+    subscript(i: Int) -> TileView? {
+        get { return gameView.indices.contains(i) ? gameView[i] : nil }
         set {
-            gameView[i] = newValue
+            if newValue != nil && gameView.indices.contains(i) {
+                gameView[i] = newValue!
+            }
         }
     }
     
-    subscript(x: Int, y: Int) -> TileView {
+    // Subscript to access gameView[i] using x and y values
+    subscript(x: Int, y: Int) -> TileView? {
         get {
-            let id = (x * size) + y
-            return gameView[id]
+            let i = (x * size) + y
+            return self[i]
         }
         set {
-            let id = (x * size) + y
-            gameView[id] = newValue
+            let i = (x * size) + y
+            self[i] = newValue
         }
     }
 }

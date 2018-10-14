@@ -9,18 +9,20 @@
 import Foundation
 
 struct Path {
-    static var maxNumberSafePaths = 10
-    static var currentNumberSafePaths = 0
-    
     var route = [Direction]()
-    var moves = 0
-    var findsTail = false
+    var state = GameState()
     var findsFruit = false
-    var findsFruitAndTail = false
+    var findsTail = false
     
-    mutating func move() {
-        if !findsFruit {
-            moves += 1
-        }
+    var id: Int {
+        return state.headID
     }
+    var depth: Int {
+        return route.count
+    }
+    
+    var up: Int { return id - boardRow }
+    var right: Int { return id + boardCol }
+    var down: Int { return id + boardRow }
+    var left: Int { return id - boardCol }
 }
