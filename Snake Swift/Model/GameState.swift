@@ -33,7 +33,7 @@ struct GameState {
     }
     
     var tailID: Int {
-        return snake.endIndex - 1
+        return snake[snake.endIndex - 1]
     }
     
     // Determines fruit distance from head

@@ -14,12 +14,13 @@ var boardCol = 0, boardRow = 0
 var shortestPath = Path()
 
 class ViewController: UIViewController {
-    let boardSize = BoardSize.large
+    let boardSize = BoardSize.small
     var gameTimer = Timer()
     var tileSize: CGFloat = 0.0, yPos: CGFloat = 0.0
     var newDirection: Direction = .right
     var gameState = GameState()
     var gameView: GameView?
+    var snakeLogic = SnakeLogic()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -89,11 +90,14 @@ class ViewController: UIViewController {
     
     // The game loop:
     func gameLoop() {
+//        snakeLogic.sortDirections(state: gameState)
+//        newDirection = snakeLogic.sortedDirections[0]
+        
         if shortestPath.route.isEmpty || !shortestPath.findsTail {
             shortestPath = Path()
-            var newPath = Path()
-            newPath.state = gameState
-            findPath([newPath], [])
+            var fruitSearch = [Path.init(route: [], state: gameState, findsFruit: false, findsTail: false)]
+            var tailSearch = [Path]()
+            findPath(&fruitSearch, &tailSearch)
         }
         
         newDirection = shortestPath.route[0]
@@ -117,19 +121,18 @@ class ViewController: UIViewController {
     }
     
     // Search for the fastest safe path to the fruit:
-    func findPath(_ fruitSearch: [Path], _ tailSearch: [Path]) {
+    func findPath(_ fruitSearch: inout [Path], _ tailSearch: inout [Path]) {
         
         // Cap the number of possible paths considered. Once the cap is reach the path closest to the fruit/tail is chosen:
-        if tailSearch.count > 250 {
-            shortestPath = tailSearch.sorted(by: {$0.state.tailDistance < $1.state.tailDistance })[0]
+        if tailSearch.count > 100 {
+            print("Tail search count: \(tailSearch.count)")
+            shortestPath = tailSearch[0]
             return
-        } else if fruitSearch.count > 250 {
-            shortestPath = fruitSearch.sorted(by: {$0.state.fruitDistance < $1.state.fruitDistance })[0]
+        } else if fruitSearch.count > 100 {
+            print("Fruit search count: \(fruitSearch.count)")
+            shortestPath = fruitSearch[0]
             return
         }
-        
-        var newFruitSearch = [Path]()
-        var newTailSearch = [Path]()
         
         // Check tile in direction:
         func searchPath(_ path: Path, direction: Direction) {
@@ -164,14 +167,16 @@ class ViewController: UIViewController {
             newPath.state.update(live: false)
             
             if newPath.findsFruit {
-                newTailSearch.append(newPath)
+                tailSearch.append(newPath)
             } else {
-                newFruitSearch.append(newPath)
+                fruitSearch.append(newPath)
             }
         }
         
         if !tailSearch.isEmpty {
-            for path in tailSearch {
+            let shortest = tailSearch[0].state.tailDistance
+            var last = 0
+            for (i, path) in tailSearch.enumerated() where path.state.tailDistance == shortest {
                 if path.findsTail {
                     shortestPath = path
                     return
@@ -180,13 +185,16 @@ class ViewController: UIViewController {
                 searchPath(path, direction: .right)
                 searchPath(path, direction: .down)
                 searchPath(path, direction: .left)
+                last = i
             }
-            // Keep track of fruitSearch paths in case all tailSearch paths are proven to be unsafe:
-            newFruitSearch = fruitSearch
+            tailSearch.removeSubrange(0...last)
             
         } else if !fruitSearch.isEmpty {
-            for path in fruitSearch {
-                if path.depth > 50 {
+            let shortest = fruitSearch[0].state.fruitDistance
+            var last = 0
+            for (i, path) in fruitSearch.enumerated() where path.state.fruitDistance == shortest {
+                if path.depth > boardSize.rawValue * 2 {
+                    print("Path depth: \(path.depth)")
                     shortestPath = path
                     return
                 }
@@ -194,11 +202,17 @@ class ViewController: UIViewController {
                 searchPath(path, direction: .right)
                 searchPath(path, direction: .down)
                 searchPath(path, direction: .left)
+                last = i
             }
+            fruitSearch.removeSubrange(0...last)
         } else {
+            //TODO: No safe paths found. Game Over imminent:
+            shortestPath.route.append(.up)
             return
         }
-        findPath(newFruitSearch, newTailSearch)
+        fruitSearch.sort{ $0.state.fruitDistance < $1.state.fruitDistance }
+        tailSearch.sort { $0.state.tailDistance < $1.state.tailDistance }
+        findPath(&fruitSearch, &tailSearch)
     }
     
     func gameOver() {

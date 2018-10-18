@@ -16,6 +16,7 @@
 		3B83AFC8215BE41C00F41319 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 3B83AFC6215BE41C00F41319 /* LaunchScreen.storyboard */; };
 		3B83AFD0215BE44000F41319 /* TileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B83AFCF215BE44000F41319 /* TileView.swift */; };
 		3B8A3E05216D436900AF7B5C /* Enumerations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B8A3E04216D436900AF7B5C /* Enumerations.swift */; };
+		3BC1A4412178E0550032B72D /* SnakeLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BC1A4402178E0550032B72D /* SnakeLogic.swift */; };
 		3BDD0E352171484B0044CBA0 /* GameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BDD0E342171484B0044CBA0 /* GameView.swift */; };
 		3BED5C52216999FA0040E034 /* Path.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BED5C51216999FA0040E034 /* Path.swift */; };
 /* End PBXBuildFile section */
@@ -32,6 +33,7 @@
 		3B83AFC9215BE41C00F41319 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3B83AFCF215BE44000F41319 /* TileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TileView.swift; sourceTree = "<group>"; };
 		3B8A3E04216D436900AF7B5C /* Enumerations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enumerations.swift; sourceTree = "<group>"; };
+		3BC1A4402178E0550032B72D /* SnakeLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnakeLogic.swift; sourceTree = "<group>"; };
 		3BDD0E342171484B0044CBA0 /* GameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameView.swift; sourceTree = "<group>"; };
 		3BED5C51216999FA0040E034 /* Path.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Path.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -72,6 +74,7 @@
 			children = (
 				3B83AFBD215BE41500F41319 /* AppDelegate.swift */,
 				3B8A3E04216D436900AF7B5C /* Enumerations.swift */,
+				3BC1A4402178E0550032B72D /* SnakeLogic.swift */,
 				3B83AFBF215BE41500F41319 /* ViewController.swift */,
 			);
 			path = Controller;
@@ -178,6 +181,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3B8A3E05216D436900AF7B5C /* Enumerations.swift in Sources */,
+				3BC1A4412178E0550032B72D /* SnakeLogic.swift in Sources */,
 				3B83AFD0215BE44000F41319 /* TileView.swift in Sources */,
 				3B771E7F216A5B450075DD72 /* Tile.swift in Sources */,
 				3B83AFC0215BE41500F41319 /* ViewController.swift in Sources */,
