@@ -75,6 +75,17 @@ struct Tile {
     }
     
     // Tile properties:
-    var kind = Kind.empty
-    var col = 0, row = 0
+    let col: Int
+    let row: Int
+    var kind: Kind
+    
+    init(_ col: Int, _ row: Int, _ kind: Kind) {
+        self.col = col
+        self.row = row
+        self.kind = kind
+    }
+    
+    init() {
+        self.init(0, 0, .empty)
+    }
 }

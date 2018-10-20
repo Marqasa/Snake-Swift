@@ -61,6 +61,8 @@ class TileView: UIView {
                 head.addLine(to: CGPoint(x: 0 + border, y: tileHeight / 2))
                 head.addLine(to: CGPoint(x: tileWidth / 2, y: 0 + border))
                 head.addLine(to: CGPoint(x: tileWidth, y: 0 + border))
+            default:
+                fatalError("Direction invalid.")
             }
             
             head.close()
@@ -174,6 +176,8 @@ class TileView: UIView {
                 tail.addLine(to: CGPoint(x: tileWidth / 2, y: tileHeight / 2))
                 tail.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight - border))
                 tail.addLine(to: CGPoint(x: 0, y: tileHeight - border))
+            default:
+                fatalError("Direction invalid.")
             }
             
             tail.close()

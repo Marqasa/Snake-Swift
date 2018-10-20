@@ -9,12 +9,37 @@
 import UIKit
 
 struct GameState {
-    var board = [Tile]()
+    let size: Int
+    let col: Int
+    let row = 1
+    var board: [Tile]
+    
     var snake = [Int]()
     var needsDisplay = Set<Int>()
     var emptyTiles = Set<Int>()
     var gameOver = false
     var fruitID: Int?
+    
+    init(size: Int) {
+        self.size = size
+        self.col = Int(sqrt(Double(size)))
+        self.board = Array(repeating: Tile(), count: size)
+    }
+    
+    // Returns fruit direction relative to head:
+    var fruitDirection: Direction? {
+        if let fruit = fruit {
+            if fruit.row < head.row && fruit.col == head.col { return .up }
+            if fruit.row < head.row && fruit.col < head.col { return .upLeft }
+            if fruit.row < head.row && fruit.col > head.col { return .upRight }
+            if fruit.row == head.row && fruit.col < head.col { return .left }
+            if fruit.row == head.row && fruit.col > head.col { return .right }
+            if fruit.row > head.row && fruit.col == head.col { return .down }
+            if fruit.row > head.row && fruit.col < head.col { return .downLeft }
+            if fruit.row > head.row && fruit.col > head.col { return .downRight }
+        }
+        return nil
+    }
     
     // Subscript to access board[i]
     subscript(i: Int) -> Tile? {
@@ -25,6 +50,34 @@ struct GameState {
             if newValue != nil && board.indices.contains(i) {
                 board[i] = newValue!
             }
+        }
+    }
+    
+    // Subscript to access board[i] using x and y values
+    subscript(x: Int, y: Int) -> Tile? {
+        get {
+            let i = (x * col) + y
+            return self[i]
+        }
+        set {
+            let i = (x * col) + y
+            self[i] = newValue
+        }
+    }
+    
+    var head: Tile {
+        return board[headID]
+    }
+    
+    var tail: Tile {
+        return board[tailID]
+    }
+    
+    var fruit: Tile? {
+        if let fruitID = fruitID {
+            return board[fruitID]
+        } else {
+            return nil
         }
     }
     
@@ -54,17 +107,17 @@ struct GameState {
     
     // Returns true if the snake is smaller than the playable board space
     var boardHasSpace: Bool {
-        return snake.count < (board.count - (boardCol * 4) + 4)
+        return snake.count < (board.count - (col * 4) + 4)
     }
     
     // Getter returns head TileType. Setter sets head TileType only if newValue is a .head case
-    var head: Tile.Kind {
+    var headKind: Tile.Kind {
         get {
             return board[headID].kind
         }
         set {
             switch newValue {
-            case .head(.up, _), .head(.right, _), .head(.down, _), .head(.left, _):
+            case .head:
                 board[headID].kind = newValue
             default:
                 break
@@ -73,13 +126,13 @@ struct GameState {
     }
     
     // Getter returns tail TileType. Setter sets tail TileType only if newValue is a .tail case
-    var tail: Tile.Kind {
+    var tailKind: Tile.Kind {
         get {
             return board[tailID].kind
         }
         set {
             switch newValue {
-            case .tail(.up, _), .tail(.right, _), .tail(.down, _), .tail(.left, _):
+            case .tail:
                 board[tailID].kind = newValue
             default:
                 break
@@ -92,12 +145,28 @@ struct GameState {
     var fruitIsToTheRight: Bool { return fruitID != nil ? board[fruitID!].col > board[headID].col : false }
     var fruitIsAbove: Bool { return fruitID != nil ? board[fruitID!].row < board[headID].row : false }
     var fruitIsToTheLeft: Bool { return fruitID != nil ? board[fruitID!].col < board[headID].col : false }
+    var fruitIsSameRow: Bool { return fruitID != nil ? board[fruitID!].row == board[headID].row : false }
+    var fruitIsSameCol: Bool { return fruitID != nil ? board[fruitID!].col == board[headID].col : false }
     
     // Computed Properties to determine tail location relative to head
     var tailIsBelow: Bool { return board[tailID].row > board[headID].row }
     var tailIsToTheRight: Bool { return board[tailID].col > board[headID].col }
     var tailIsAbove: Bool { return board[tailID].row < board[headID].row }
     var tailIsToTheLeft: Bool { return board[tailID].col < board[headID].col }
+    
+    mutating func makeTile(_ x: Int, _ y: Int) -> Tile {
+        func getKind() -> Tile.Kind {
+            if y == 0 || x == 0 || x == col - 1 || y == col - 1 {
+                return Tile.Kind.wall(UIColor.black)
+            } else {
+                return Tile.Kind.empty
+            }
+        }
+        
+        let tile = Tile(x, y, getKind())
+        self[x, y] = tile
+        return tile
+    }
     
     // Check for all empty tiles
     mutating func checkEmptyTiles() {
@@ -114,7 +183,7 @@ struct GameState {
     mutating func update(live: Bool) {
         
         // Remember tail state
-        var tempTail = tail
+        var tempTail = tailKind
         
         // Update old and new tile properties:
         func updateTileProperties(from oldID: Int, to newID: Int) {
@@ -143,53 +212,55 @@ struct GameState {
                 let color = board[newID].kind.color()!
                 switch board[newID].kind.direction()! {
                 case .up:
-                    if oldID == newID + boardCol {
+                    if oldID == newID + col {
                         board[newID].kind = .body(.up, .upRight, color)
-                    } else if oldID == newID + boardRow {
+                    } else if oldID == newID + row {
                         board[newID].kind = .body(.up, .upDown, color)
                     } else {
                         board[newID].kind = .body(.up, .upLeft, color)
                     }
                 case .right:
-                    if oldID == newID - boardRow {
+                    if oldID == newID - row {
                         board[newID].kind = .body(.right, .upRight, color)
-                    } else if oldID == newID - boardCol {
+                    } else if oldID == newID - col {
                         board[newID].kind = .body(.right, .rightLeft, color)
                     } else {
                         board[newID].kind = .body(.right, .rightDown, color)
                     }
                 case .down:
-                    if oldID == newID + boardCol {
+                    if oldID == newID + col {
                         board[newID].kind = .body(.down, .rightDown, color)
-                    } else if oldID == newID - boardCol {
+                    } else if oldID == newID - col {
                         board[newID].kind = .body(.down, .downLeft, color)
                     } else {
                         board[newID].kind = .body(.down, .upDown, color)
                     }
                 case .left:
-                    if oldID == newID + boardRow {
+                    if oldID == newID + row {
                         board[newID].kind = .body(.left, .downLeft, color)
-                    } else if oldID == newID + boardCol {
+                    } else if oldID == newID + col {
                         board[newID].kind = .body(.left, .rightLeft, color)
                     } else {
                         board[newID].kind = .body(.left, .upLeft, color)
                     }
+                default:
+                    fatalError("Direction invalid.")
                 }
             case .tail:
                 
                 let color = board[newID].kind.color()!
                 
-                switch head {
+                switch headKind {
                     
                 // If the snake ate a piece of fruit:
                 case let .dual(.head(headDirection, headColor), .fruit):
-                    head = .head(headDirection, headColor)
+                    headKind = .head(headDirection, headColor)
                     snake.append(oldID)
                     fruitID = 0
                     if live {
                         newFruit()
                         if fruitID != nil { needsDisplay.insert(fruitID!) }
-                        shortestPath = Path()
+                        shortestPath = Path(state: self)
                     }
                     
                 // Else move the tail:
@@ -230,13 +301,15 @@ struct GameState {
             // Update snake[i] to contain new tile ID:
             switch direction {
             case .up:
-                snake[i] -= boardRow
+                snake[i] -= row
             case .right:
-                snake[i] += boardCol
+                snake[i] += col
             case .down:
-                snake[i] += boardRow
+                snake[i] += row
             case .left:
-                snake[i] -= boardCol
+                snake[i] -= col
+            default:
+                fatalError("Direction invalid.")
             }
             
             // Update properties for both old and new tiles:

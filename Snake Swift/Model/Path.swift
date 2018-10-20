@@ -9,8 +9,13 @@
 import Foundation
 
 struct Path {
+    var state: GameState
+    
+    init(state: GameState) {
+        self.state = state
+    }
+    
     var route = [Direction]()
-    var state = GameState()
     var findsFruit = false
     var findsTail = false
     
@@ -21,8 +26,8 @@ struct Path {
         return route.count
     }
     
-    var up: Int { return id - boardRow }
-    var right: Int { return id + boardCol }
-    var down: Int { return id + boardRow }
-    var left: Int { return id - boardCol }
+    var up:     Int { return id - state.row }
+    var right:  Int { return id + state.col }
+    var down:   Int { return id + state.row }
+    var left:   Int { return id - state.col }
 }
