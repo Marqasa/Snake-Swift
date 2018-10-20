@@ -9,9 +9,30 @@
 import UIKit
 
 struct SnakeLogic {
-
-    // Get new direction using simple logic:
+    var shortestPath: Path?
+    private var logicMode: LogicMode = .slow
+    
+    private enum LogicMode {
+        case fast
+        case slow
+    }
+    
+    // Get new direction:
     mutating func getNewDirection(state: GameState) -> Direction {
+        if shortestPath?.route.isEmpty ?? true {
+            var fruitSearch = [Path.init(state: state)]
+            var tailSearch = [Path]()
+            let duration = 0.01
+            let timeLimit = DateInterval(start: Date(), duration: duration)
+            findPath(&fruitSearch, &tailSearch, timeLimit)
+        }
+        if shortestPath != nil {
+            let newDirection = shortestPath!.route[0]
+            shortestPath!.route.remove(at: 0)
+            //TODO: Why only 1 value?
+            if shortestPath!.route.isEmpty { shortestPath = nil }
+            return newDirection
+        }
         var safeDirections: Set<Direction> = [.up, .right, .down, .left]
         
         for direction in safeDirections {
@@ -30,6 +51,7 @@ struct SnakeLogic {
             }
         }
         return self.getDirectionFromFruit(state: state, safeDirections: safeDirections)
+        
     }
     
     private func checkTile(_ tileID: Int, _ direction: Direction, _ state: GameState, _ checkedTiles: inout Set<Int>) -> Bool {
@@ -87,7 +109,7 @@ struct SnakeLogic {
         
         // Check the tile to the left
         if checkTile(tileID - state.col, direction, state, &checkedTiles) { return true }
-
+        
         // This direction is not safe
         return false
     }
@@ -155,52 +177,55 @@ struct SnakeLogic {
     }
     
     // Get new direction using thorough logic:
-    private func findPath(_ fruitSearch: inout [Path], _ tailSearch: inout [Path]) {
-        
-        // Cap the number of possible paths considered. Once the cap is reach the path closest to the fruit/tail is chosen:
-        if tailSearch.count > 100 {
-            print("Tail search count: \(tailSearch.count)")
-            shortestPath = tailSearch[0]
-            return
-        } else if fruitSearch.count > 100 {
-            print("Fruit search count: \(fruitSearch.count)")
-            shortestPath = fruitSearch[0]
+    private mutating func findPath(_ fruitSearch: inout [Path], _ tailSearch: inout [Path], _ timeLimit: DateInterval) {
+        if Date() > timeLimit.end {
             return
         }
+        
+        // Cap the number of possible paths considered. Once the cap is reach the path closest to the fruit/tail is chosen:
+        //        if tailSearch.count > 100 {
+        //            print("Tail search count: \(tailSearch.count)")
+        //            shortestPath = tailSearch[0]
+        //            return
+        //        } else if fruitSearch.count > 100 {
+        //            print("Fruit search count: \(fruitSearch.count)")
+        //            shortestPath = fruitSearch[0]
+        //            return
+        //        }
         
         // Check tile in direction:
         func searchPath(_ path: Path, direction: Direction) {
             var newPath = path
-            var tileID = 0
-            
-            switch direction {
-            case .up:
-                tileID = path.up
-            case .right:
-                tileID = path.right
-            case .down:
-                tileID = path.down
-            case .left:
-                tileID = path.left
-            default:
-                fatalError("Direction invalid.")
-            }
+            let tileID: Int = {
+                switch direction {
+                case .up:       return path.up
+                case .right:    return path.right
+                case .down:     return path.down
+                case .left:     return path.left
+                default:        fatalError("Invalid direction.")
+                }
+            }()
             
             // Check tile type:
-            switch path.state[tileID]?.kind {
-            case .wall?, .body?:
+            switch path.state[tileID]!.kind {
+            case .wall, .body:
                 return
-            case .fruit?:
+            case .fruit:
                 newPath.findsFruit = true
-            case .tail?:
-                if newPath.findsFruit { newPath.findsTail = true }
+            case .tail:
+                if newPath.state.fruitID == nil {
+                    newPath.findsFruit = true
+                    newPath.findsTail = true
+                } else if newPath.findsFruit {
+                    newPath.findsTail = true
+                }
             default:
                 break
             }
             
             newPath.route.append(direction)
             newPath.state.headKind = .head(direction, UIColor.red)
-            newPath.state.update(live: false)
+            _ = newPath.state.update(live: false)
             
             if newPath.findsFruit {
                 tailSearch.append(newPath)
@@ -210,9 +235,9 @@ struct SnakeLogic {
         }
         
         if !tailSearch.isEmpty {
-            let shortest = tailSearch[0].state.tailDistance
+            //            let shortest = tailSearch[0].state.tailDistance
             var last = 0
-            for (i, path) in tailSearch.enumerated() where path.state.tailDistance == shortest {
+            for (i, path) in tailSearch.enumerated() /* where path.state.tailDistance == shortest */ {
                 if path.findsTail {
                     shortestPath = path
                     return
@@ -226,11 +251,10 @@ struct SnakeLogic {
             tailSearch.removeSubrange(0...last)
             
         } else if !fruitSearch.isEmpty {
-            let shortest = fruitSearch[0].state.fruitDistance
+            //            let shortest = fruitSearch[0].state.fruitDistance
             var last = 0
-            for (i, path) in fruitSearch.enumerated() where path.state.fruitDistance == shortest {
-                if path.depth > 100 { //TODO: Placeholder value
-                    print("Path depth: \(path.depth)")
+            for (i, path) in fruitSearch.enumerated() /* where path.state.fruitDistance == shortest */ {
+                if (fruitSearch.count == 1 && !path.route.isEmpty) || path.depth > path.state.snake.count * 8 {
                     shortestPath = path
                     return
                 }
@@ -246,8 +270,8 @@ struct SnakeLogic {
             shortestPath!.route.append(.up)
             return
         }
-        fruitSearch.sort{ $0.state.fruitDistance < $1.state.fruitDistance }
-        tailSearch.sort { $0.state.tailDistance < $1.state.tailDistance }
-        findPath(&fruitSearch, &tailSearch)
+        //        fruitSearch.sort{ $0.state.fruitDistance < $1.state.fruitDistance }
+        //        tailSearch.sort { $0.state.tailDistance < $1.state.tailDistance }
+        findPath(&fruitSearch, &tailSearch, timeLimit)
     }
 }

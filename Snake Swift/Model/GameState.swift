@@ -13,6 +13,7 @@ struct GameState {
     let col: Int
     let row = 1
     var board: [Tile]
+    var fruitlessMoves = 0
     
     var snake = [Int]()
     var needsDisplay = Set<Int>()
@@ -24,6 +25,13 @@ struct GameState {
         self.size = size
         self.col = Int(sqrt(Double(size)))
         self.board = Array(repeating: Tile(), count: size)
+    }
+    
+    enum Result {
+        case victory
+        case gameOver
+        case newFruit
+        case ok
     }
     
     // Returns fruit direction relative to head:
@@ -180,7 +188,9 @@ struct GameState {
     }
     
     // Update the game state (move/grow the snake and spawn a new fruit if neccessary)
-    mutating func update(live: Bool) {
+    mutating func update(live: Bool) -> Result {
+        fruitlessMoves += 1
+        var result: Result = .ok
         
         // Remember tail state
         var tempTail = tailKind
@@ -200,6 +210,7 @@ struct GameState {
                     board[newID].kind = .dual(.head(headDirection, fruitColor), .fruit(fruitColor))
                     
                 case .wall, .body:
+                    result = .gameOver
                     gameOver = true
                     
                 default:
@@ -257,10 +268,15 @@ struct GameState {
                     headKind = .head(headDirection, headColor)
                     snake.append(oldID)
                     fruitID = 0
+                    fruitlessMoves = 0
                     if live {
                         newFruit()
-                        if fruitID != nil { needsDisplay.insert(fruitID!) }
-                        shortestPath = Path(state: self)
+                        if fruitID != nil {
+                            result = .newFruit
+                            needsDisplay.insert(fruitID!)
+                        } else {
+                            result = .victory
+                        }
                     }
                     
                 // Else move the tail:
@@ -315,6 +331,7 @@ struct GameState {
             // Update properties for both old and new tiles:
             updateTileProperties(from: tileID, to: snake[i])
         }
+        return result
     }
     
     // Add a new fruit to the board and return its ID
@@ -336,8 +353,21 @@ struct GameState {
             }
             
         } else {
-            //TODO: Add victory screen
-            print("You Win!")
+            fruitID = nil
         }
+    }
+    mutating func restart() {
+        for (i, id) in snake.enumerated() {
+            if i == 2 {
+                let direction = board[id].kind.direction()!
+                let color = board[id].kind.color()!
+                board[id].kind = .tail(direction, color)
+            } else if i > 2 {
+                board[id].kind = .empty
+            }
+            needsDisplay.insert(id)
+        }
+        snake.removeSubrange(3..<snake.endIndex)
+        newFruit()
     }
 }

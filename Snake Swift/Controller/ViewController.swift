@@ -20,8 +20,6 @@ enum Direction: CaseIterable {
     case upLeft
 }
 
-var shortestPath: Path?
-
 class ViewController: UIViewController {
     var gameTimer = Timer()
     var newDirection: Direction = .right
@@ -83,22 +81,16 @@ class ViewController: UIViewController {
     func gameLoop() {
         newDirection = snakeLogic.getNewDirection(state: gameState!)
         
-//        if shortestPath.route.isEmpty || !shortestPath.findsTail {
-//            shortestPath = Path()
-//            var fruitSearch = [Path.init(route: [], state: gameState, findsFruit: false, findsTail: false)]
-//            var tailSearch = [Path]()
-//            findPath(&fruitSearch, &tailSearch)
-//        }
-//
-//        newDirection = shortestPath.route[0]
-//        shortestPath.route.remove(at: 0)
-        
         gameState!.headKind = .head(newDirection, gameState!.headKind.color()!)
         
-        gameState?.update(live: true)
-        if (gameState?.gameOver)! {
-            gameOver()
+        let result = gameState!.update(live: true)
+        switch result {
+        case .newFruit: snakeLogic.shortestPath = nil
+        case .gameOver: gameOver()
+        case .victory: victory()
+        default: break
         }
+
         
         updateGameView()
     }
@@ -112,7 +104,12 @@ class ViewController: UIViewController {
     }
     
     func gameOver() {
-        print("Game Over")
+        print("Game Over!")
         gameTimer.invalidate()
+    }
+    
+    func victory() {
+        print("Victory!")
+        gameState!.restart()
     }
 }
