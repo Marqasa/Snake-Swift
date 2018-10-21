@@ -167,6 +167,7 @@ struct GameState {
             if y == 0 || x == 0 || x == col - 1 || y == col - 1 {
                 return Tile.Kind.wall(UIColor.black)
             } else {
+                emptyTiles.insert((x * col) + y)
                 return Tile.Kind.empty
             }
         }
@@ -174,17 +175,6 @@ struct GameState {
         let tile = Tile(x, y, getKind())
         self[x, y] = tile
         return tile
-    }
-    
-    // Check for all empty tiles
-    mutating func checkEmptyTiles() {
-        for (i, e) in board.enumerated() {
-            if e.kind == .empty {
-                emptyTiles.insert(i)
-            } else {
-                emptyTiles.remove(i)
-            }
-        }
     }
     
     // Update the game state (move/grow the snake and spawn a new fruit if neccessary)
@@ -215,6 +205,7 @@ struct GameState {
                     
                 default:
                     board[newID].kind = .head(headDirection, headColor)
+                    emptyTiles.remove(newID)
                 }
                 
             case .body:
@@ -288,6 +279,7 @@ struct GameState {
                             board[newID].kind = .tail(direction, color)
                         }
                         board[oldID].kind = .empty
+                        emptyTiles.insert(oldID)
                     }
                 }
                 
@@ -338,11 +330,7 @@ struct GameState {
     mutating func newFruit() {
         
         // Only add a new fruit if there is still space on the board
-        //TODO: Maintain emptyTiles and use it as the check for game over instead of boardHasSpace
         if boardHasSpace {
-            
-            // Check for empty tiles
-            checkEmptyTiles()
             
             // Choose an empty tile at random and spawn the fruit there
             fruitID = emptyTiles.randomElement()
@@ -350,6 +338,7 @@ struct GameState {
                 let hue = CGFloat(arc4random_uniform(100)) / 100
                 let color = UIColor(hue: hue, saturation: 0.5, brightness: 0.9, alpha: 1)
                 board[fruitID!].kind = .fruit(color)
+                emptyTiles.remove(fruitID!)
             }
             
         } else {
@@ -364,6 +353,7 @@ struct GameState {
                 board[id].kind = .tail(direction, color)
             } else if i > 2 {
                 board[id].kind = .empty
+                emptyTiles.insert(id)
             }
             needsDisplay.insert(id)
         }

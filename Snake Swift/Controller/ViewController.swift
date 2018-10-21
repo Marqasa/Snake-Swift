@@ -53,16 +53,19 @@ class ViewController: UIViewController {
         let headID = (gameState!.col * 3) + gameState!.row
         gameState!.snake.append(headID)
         gameState![headID]!.kind = .head(.right, UIColor.red)
+        gameState!.emptyTiles.remove(headID)
         gameView![headID]!.tile = gameState![headID]!
         
         let bodyID = headID - gameState!.col
         gameState!.snake.append(bodyID)
         gameState![bodyID]!.kind = .body(.right, .rightLeft, UIColor.red)
+        gameState!.emptyTiles.remove(bodyID)
         gameView![bodyID]!.tile = gameState![bodyID]!
         
         let tailID = bodyID - gameState!.col
         gameState!.snake.append(tailID)
         gameState![tailID]!.kind = .tail(.right, UIColor.red)
+        gameState!.emptyTiles.remove(tailID)
         gameView![tailID]!.tile = gameState![tailID]!
         
         // Add a new fruit

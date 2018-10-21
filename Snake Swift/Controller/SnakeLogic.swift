@@ -10,26 +10,19 @@ import UIKit
 
 struct SnakeLogic {
     var shortestPath: Path?
-    private var logicMode: LogicMode = .slow
-    
-    private enum LogicMode {
-        case fast
-        case slow
-    }
     
     // Get new direction:
     mutating func getNewDirection(state: GameState) -> Direction {
         if shortestPath?.route.isEmpty ?? true {
             var fruitSearch = [Path.init(state: state)]
             var tailSearch = [Path]()
-            let duration = 0.01
+            let duration = Double(state.fruitlessMoves) * 0.005
             let timeLimit = DateInterval(start: Date(), duration: duration)
             findPath(&fruitSearch, &tailSearch, timeLimit)
         }
         if shortestPath != nil {
             let newDirection = shortestPath!.route[0]
             shortestPath!.route.remove(at: 0)
-            //TODO: Why only 1 value?
             if shortestPath!.route.isEmpty { shortestPath = nil }
             return newDirection
         }
@@ -114,8 +107,8 @@ struct SnakeLogic {
         return false
     }
     
+    // Choose new direction based on fruit direction and current direction:
     private func getDirectionFromFruit(state: GameState, safeDirections: Set<Direction>) -> Direction {
-        // Choose new direction based on fruit direction and current direction:
         let direction = state.head.kind.direction()!
         switch state.fruitDirection {
         case .up?:
@@ -176,22 +169,11 @@ struct SnakeLogic {
         return direction
     }
     
-    // Get new direction using thorough logic:
+    // Find path exstensive search
     private mutating func findPath(_ fruitSearch: inout [Path], _ tailSearch: inout [Path], _ timeLimit: DateInterval) {
         if Date() > timeLimit.end {
             return
         }
-        
-        // Cap the number of possible paths considered. Once the cap is reach the path closest to the fruit/tail is chosen:
-        //        if tailSearch.count > 100 {
-        //            print("Tail search count: \(tailSearch.count)")
-        //            shortestPath = tailSearch[0]
-        //            return
-        //        } else if fruitSearch.count > 100 {
-        //            print("Fruit search count: \(fruitSearch.count)")
-        //            shortestPath = fruitSearch[0]
-        //            return
-        //        }
         
         // Check tile in direction:
         func searchPath(_ path: Path, direction: Direction) {
@@ -223,6 +205,8 @@ struct SnakeLogic {
                 break
             }
             
+            //TODO: Ensure final two squares can be moved next each other regardless of which square spawns the fruit
+            
             newPath.route.append(direction)
             newPath.state.headKind = .head(direction, UIColor.red)
             _ = newPath.state.update(live: false)
@@ -235,9 +219,8 @@ struct SnakeLogic {
         }
         
         if !tailSearch.isEmpty {
-            //            let shortest = tailSearch[0].state.tailDistance
             var last = 0
-            for (i, path) in tailSearch.enumerated() /* where path.state.tailDistance == shortest */ {
+            for (i, path) in tailSearch.enumerated() {
                 if path.findsTail {
                     shortestPath = path
                     return
@@ -251,9 +234,8 @@ struct SnakeLogic {
             tailSearch.removeSubrange(0...last)
             
         } else if !fruitSearch.isEmpty {
-            //            let shortest = fruitSearch[0].state.fruitDistance
             var last = 0
-            for (i, path) in fruitSearch.enumerated() /* where path.state.fruitDistance == shortest */ {
+            for (i, path) in fruitSearch.enumerated() {
                 if (fruitSearch.count == 1 && !path.route.isEmpty) || path.depth > path.state.snake.count * 8 {
                     shortestPath = path
                     return
@@ -265,13 +247,7 @@ struct SnakeLogic {
                 last = i
             }
             fruitSearch.removeSubrange(0...last)
-        } else {
-            //TODO: No safe paths found. Game Over imminent:
-            shortestPath!.route.append(.up)
-            return
         }
-        //        fruitSearch.sort{ $0.state.fruitDistance < $1.state.fruitDistance }
-        //        tailSearch.sort { $0.state.tailDistance < $1.state.tailDistance }
         findPath(&fruitSearch, &tailSearch, timeLimit)
     }
 }

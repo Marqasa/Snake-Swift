@@ -190,11 +190,10 @@ class TileView: UIView {
         case .fruit(let color):
             
             let fruit = UIBezierPath()
-            fruit.move(to: CGPoint(x: tileWidth / 2, y: 0))
-            fruit.addLine(to: CGPoint(x: tileWidth, y: tileHeight / 2))
-            fruit.addLine(to: CGPoint(x: tileHeight / 2, y: tileHeight))
-            fruit.addLine(to: CGPoint(x: 0, y: tileHeight / 2))
-            fruit.addLine(to: CGPoint(x: tileWidth / 2, y: 0))
+            fruit.move(to: CGPoint(x: tileWidth / 2, y: border))
+            fruit.addLine(to: CGPoint(x: tileWidth - border, y: tileHeight / 2))
+            fruit.addLine(to: CGPoint(x: tileHeight / 2, y: tileHeight - border))
+            fruit.addLine(to: CGPoint(x: border, y: tileHeight / 2))
             fruit.close()
             fruit.lineWidth = 1
             color.setFill()
