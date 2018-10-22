@@ -16,7 +16,7 @@ struct SnakeLogic {
         if shortestPath?.route.isEmpty ?? true {
             var fruitSearch = [Path.init(state: state)]
             var tailSearch = [Path]()
-            let duration = Double(state.fruitlessMoves) * 0.005
+            let duration = min(Double(state.fruitlessMoves) * 0.005, 10.0)
             let timeLimit = DateInterval(start: Date(), duration: duration)
             findPath(&fruitSearch, &tailSearch, timeLimit)
         }
@@ -171,6 +171,7 @@ struct SnakeLogic {
     
     // Find path exstensive search
     private mutating func findPath(_ fruitSearch: inout [Path], _ tailSearch: inout [Path], _ timeLimit: DateInterval) {
+        if shortestPath != nil { return }
         if Date() > timeLimit.end {
             return
         }
@@ -193,49 +194,46 @@ struct SnakeLogic {
             case .wall, .body:
                 return
             case .fruit:
-                newPath.findsFruit = true
-            case .tail:
-                if newPath.state.fruitID == nil {
-                    newPath.findsFruit = true
-                    newPath.findsTail = true
-                } else if newPath.findsFruit {
-                    newPath.findsTail = true
+                newPath.route.append(direction)
+                newPath.state.headKind = .head(direction, UIColor.red)
+                _ = newPath.state.update(live: false)
+                
+                var safeDirections: Set<Direction> = [.up, .right, .down, .left]
+                
+                for direction in safeDirections {
+                    var checkedTiles = Set<Int>()
+                    let startingTile: Int = {
+                        switch direction {
+                        case .up:       return newPath.state.headID - newPath.state.row
+                        case .right:    return newPath.state.headID + newPath.state.col
+                        case .down:     return newPath.state.headID + newPath.state.row
+                        case .left:     return newPath.state.headID - newPath.state.col
+                        default:        fatalError("Invalid direction.")
+                        }
+                    }()
+                    if !checkTile(startingTile, direction, newPath.state, &checkedTiles) {
+                        safeDirections.remove(direction)
+                    } else {
+                        break
+                    }
                 }
+                
+                if !safeDirections.isEmpty { shortestPath = newPath }
+                return
             default:
                 break
             }
             
-            //TODO: Ensure final two squares can be moved next each other regardless of which square spawns the fruit
-            
             newPath.route.append(direction)
             newPath.state.headKind = .head(direction, UIColor.red)
             _ = newPath.state.update(live: false)
-            
-            if newPath.findsFruit {
-                tailSearch.append(newPath)
-            } else {
-                fruitSearch.append(newPath)
-            }
+            fruitSearch.append(newPath)
         }
         
-        if !tailSearch.isEmpty {
-            var last = 0
-            for (i, path) in tailSearch.enumerated() {
-                if path.findsTail {
-                    shortestPath = path
-                    return
-                }
-                searchPath(path, direction: .up)
-                searchPath(path, direction: .right)
-                searchPath(path, direction: .down)
-                searchPath(path, direction: .left)
-                last = i
-            }
-            tailSearch.removeSubrange(0...last)
-            
-        } else if !fruitSearch.isEmpty {
+        if !fruitSearch.isEmpty {
             var last = 0
             for (i, path) in fruitSearch.enumerated() {
+                if shortestPath != nil { return }
                 if (fruitSearch.count == 1 && !path.route.isEmpty) || path.depth > path.state.snake.count * 8 {
                     shortestPath = path
                     return
