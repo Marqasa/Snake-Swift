@@ -177,6 +177,7 @@ struct GameState {
         return tile
     }
     
+    //TODO: Fix color bug
     // Update the game state (move/grow the snake and spawn a new fruit if neccessary)
     mutating func update(live: Bool) -> Result {
         fruitlessMoves += 1
@@ -260,10 +261,10 @@ struct GameState {
                     snake.append(oldID)
                     fruitID = 0
                     fruitlessMoves = 0
+                    result = .newFruit
                     if live {
                         newFruit()
                         if fruitID != nil {
-                            result = .newFruit
                             needsDisplay.insert(fruitID!)
                         } else {
                             result = .victory

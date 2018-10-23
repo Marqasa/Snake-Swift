@@ -10,24 +10,16 @@ import Foundation
 
 struct Path {
     var state: GameState
-    
-    init(state: GameState) {
-        self.state = state
-    }
-    
     var route = [Direction]()
-    var findsFruit = false
-    var findsTail = false
-    
-    var id: Int {
-        return state.headID
-    }
-    var depth: Int {
-        return route.count
-    }
-    
+    var id: Int { return state.headID }
+    var kind: Tile.Kind { return state.headKind }
+    var depth: Int { return route.count }
     var up:     Int { return id - state.row }
     var right:  Int { return id + state.col }
     var down:   Int { return id + state.row }
     var left:   Int { return id - state.col }
+    
+    init(state: GameState) {
+        self.state = state
+    }
 }

@@ -14,11 +14,9 @@ struct SnakeLogic {
     // Get new direction:
     mutating func getNewDirection(state: GameState) -> Direction {
         if shortestPath?.route.isEmpty ?? true {
-            var fruitSearch = [Path.init(state: state)]
-            var tailSearch = [Path]()
-            let duration = min(Double(state.fruitlessMoves) * 0.005, 10.0)
-            let timeLimit = DateInterval(start: Date(), duration: duration)
-            findPath(&fruitSearch, &tailSearch, timeLimit)
+            var pathsToSearch = [Path.init(state: state)]
+            let timeLimit = DateInterval(start: Date(), duration: min(Double(state.fruitlessMoves) * 0.005, 1))
+            findPath(&pathsToSearch, timeLimit)
         }
         if shortestPath != nil {
             let newDirection = shortestPath!.route[0]
@@ -26,6 +24,11 @@ struct SnakeLogic {
             if shortestPath!.route.isEmpty { shortestPath = nil }
             return newDirection
         }
+        return self.getDirectionFromFruit(state: state, safeDirections: getSafeDirections(state))
+        
+    }
+    
+    private func getSafeDirections(_ state: GameState) -> Set<Direction> {
         var safeDirections: Set<Direction> = [.up, .right, .down, .left]
         
         for direction in safeDirections {
@@ -39,75 +42,56 @@ struct SnakeLogic {
                 default:        fatalError("Invalid direction.")
                 }
             }()
-            if !checkTile(startingTile, direction, state, &checkedTiles) {
+            if !checkTile(startingTile, state, &checkedTiles) {
                 safeDirections.remove(direction)
             }
         }
-        return self.getDirectionFromFruit(state: state, safeDirections: safeDirections)
-        
+        return safeDirections
     }
     
-    private func checkTile(_ tileID: Int, _ direction: Direction, _ state: GameState, _ checkedTiles: inout Set<Int>) -> Bool {
+    // Check tile has a safe path to the tail
+    private func checkTile(_ tileID: Int, _ state: GameState, _ checkedTiles: inout Set<Int>) -> Bool {
         if checkedTiles.contains(tileID) { return false } else { checkedTiles.insert(tileID) }
         
         if let tile = state[tileID] {
             switch tile.kind {
-            case .wall, .body, .head:
-                return false
-            case .tail:
-                return true
-            case .fruit:
-                break
+            case .wall, .head, .body: return false
+            case .tail: return true
+            case .fruit: break
             default:
-                switch state.tailKind.direction() {
-                case .up?:
-                    let safe = state.tailID - 1 // The tile below the tail
-                    
-                    if tileID - state.row == safe || tileID + state.col == safe || tileID - state.col == safe {
-                        return true
+                // Check if the tail will be adjacent in 1 moves time
+                let nextTailID: Int = {
+                    switch state.tailKind.direction()! {
+                    case .up:       return state.tailID - state.row
+                    case .right:    return state.tailID + state.col
+                    case .down:     return state.tailID + state.row
+                    case .left:     return state.tailID - state.col
+                    default:        fatalError("Invalid direction.")
                     }
-                case .right?:
-                    let safe = state.tailID + state.col // The tile to the right of the tail
-                    
-                    if tileID + state.row == safe || tileID - state.row == safe || tileID + state.col == safe {
-                        return true
-                    }
-                case .down?:
-                    
-                    let safe = state.tailID + 1 // The tile above the tail
-                    
-                    if tileID - state.col == safe || tileID + state.col == safe || tileID + state.row == safe {
-                        return true
-                    }
-                case .left?:
-                    
-                    let safe = state.tailID - state.col // The tile to the left of the tail
-                    
-                    if tileID - state.col == safe || tileID - state.row == safe || tileID + state.row == safe {
-                        return true
-                    }
-                default:
-                    break
+                }()
+                if nextTailID == tileID - state.row || nextTailID == tileID + state.row || nextTailID == tileID - state.col || nextTailID == tileID + state.col {
+                    return true
                 }
             }
         }
+        
         // Check the tile above
-        if checkTile(tileID - state.row, direction, state, &checkedTiles) { return true }
+        if checkTile(tileID - state.row, state, &checkedTiles) { return true }
         
         // Check the tile to the right
-        if checkTile(tileID + state.col, direction, state, &checkedTiles) { return true }
+        if checkTile(tileID + state.col, state, &checkedTiles) { return true }
         
         // Check the tile below
-        if checkTile(tileID + state.row, direction, state, &checkedTiles) { return true }
+        if checkTile(tileID + state.row, state, &checkedTiles) { return true }
         
         // Check the tile to the left
-        if checkTile(tileID - state.col, direction, state, &checkedTiles) { return true }
+        if checkTile(tileID - state.col, state, &checkedTiles) { return true }
         
-        // This direction is not safe
+        // This tile is not safe
         return false
     }
     
-    // Choose new direction based on fruit direction and current direction:
+    // Choose new direction from all safe options based on fruit direction:
     private func getDirectionFromFruit(state: GameState, safeDirections: Set<Direction>) -> Direction {
         let direction = state.head.kind.direction()!
         switch state.fruitDirection {
@@ -170,82 +154,56 @@ struct SnakeLogic {
     }
     
     // Find path exstensive search
-    private mutating func findPath(_ fruitSearch: inout [Path], _ tailSearch: inout [Path], _ timeLimit: DateInterval) {
-        if shortestPath != nil { return }
-        if Date() > timeLimit.end {
-            return
-        }
+    private mutating func findPath(_ pathsToSearch: inout [Path], _ timeLimit: DateInterval) {
         
-        // Check tile in direction:
-        func searchPath(_ path: Path, direction: Direction) {
+        // Search path for fruit
+        func searchPath(_ path: Path, direction: Direction) -> Bool {
             var newPath = path
-            let tileID: Int = {
-                switch direction {
-                case .up:       return path.up
-                case .right:    return path.right
-                case .down:     return path.down
-                case .left:     return path.left
-                default:        fatalError("Invalid direction.")
-                }
-            }()
+            newPath.route.append(direction)
+            newPath.state.headKind = .head(direction, UIColor.red)
+            let result = newPath.state.update(live: false)
             
-            // Check tile type:
-            switch path.state[tileID]!.kind {
-            case .wall, .body:
-                return
-            case .fruit:
-                newPath.route.append(direction)
-                newPath.state.headKind = .head(direction, UIColor.red)
-                _ = newPath.state.update(live: false)
-                
-                var safeDirections: Set<Direction> = [.up, .right, .down, .left]
-                
-                for direction in safeDirections {
+            switch result {
+            case .gameOver: return false
+            case .newFruit:
+                for direction in Set<Direction>(arrayLiteral: .up, .right, .down, .left) {
                     var checkedTiles = Set<Int>()
                     let startingTile: Int = {
                         switch direction {
-                        case .up:       return newPath.state.headID - newPath.state.row
-                        case .right:    return newPath.state.headID + newPath.state.col
-                        case .down:     return newPath.state.headID + newPath.state.row
-                        case .left:     return newPath.state.headID - newPath.state.col
+                        case .up:       return newPath.up
+                        case .right:    return newPath.right
+                        case .down:     return newPath.down
+                        case .left:     return newPath.left
                         default:        fatalError("Invalid direction.")
                         }
                     }()
-                    if !checkTile(startingTile, direction, newPath.state, &checkedTiles) {
-                        safeDirections.remove(direction)
-                    } else {
-                        break
+                    if checkTile(startingTile, newPath.state, &checkedTiles) {
+                        shortestPath = newPath
+                        return true
                     }
                 }
-                
-                if !safeDirections.isEmpty { shortestPath = newPath }
-                return
-            default:
-                break
+                return false
+            default: break
             }
-            
-            newPath.route.append(direction)
-            newPath.state.headKind = .head(direction, UIColor.red)
-            _ = newPath.state.update(live: false)
-            fruitSearch.append(newPath)
+            pathsToSearch.append(newPath)
+            return false
         }
         
-        if !fruitSearch.isEmpty {
+        if !pathsToSearch.isEmpty {
             var last = 0
-            for (i, path) in fruitSearch.enumerated() {
-                if shortestPath != nil { return }
-                if (fruitSearch.count == 1 && !path.route.isEmpty) || path.depth > path.state.snake.count * 8 {
-                    shortestPath = path
-                    return
+            for (i, path) in pathsToSearch.enumerated() {
+                if shortestPath != nil || Date() > timeLimit.end { return }
+                if (pathsToSearch.count == 1 && !path.route.isEmpty) || path.depth > path.state.snake.count * 8 {
+                    shortestPath = path; return
                 }
-                searchPath(path, direction: .up)
-                searchPath(path, direction: .right)
-                searchPath(path, direction: .down)
-                searchPath(path, direction: .left)
+                if searchPath(path, direction: .up) { return }
+                if searchPath(path, direction: .right) { return }
+                if searchPath(path, direction: .down) { return }
+                if searchPath(path, direction: .left) { return }
                 last = i
             }
-            fruitSearch.removeSubrange(0...last)
+            pathsToSearch.removeSubrange(0...last) // Remove searched paths
         }
-        findPath(&fruitSearch, &tailSearch, timeLimit)
+        findPath(&pathsToSearch, timeLimit)
     }
 }
