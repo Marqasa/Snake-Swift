@@ -9,8 +9,9 @@
 import Foundation
 
 struct GameSettings {
-    var speed = 0.1
-    var boardSize = BoardSize.tiny
+    var speed = 0.2
+    var boardSize = BoardSize.large
+    var watchMode = false
     
     enum BoardSize: Int {
         case tiny = 25

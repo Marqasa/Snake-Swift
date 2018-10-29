@@ -8,19 +8,27 @@
 
 import UIKit
 
-struct GameView {
+class GameView: UIView {
     let size: Int
     let vectors: Int
     let tileSize: CGFloat
     let yPos: CGFloat
     var gameView: [TileView]
     
-    init(size: Int, bounds: CGRect) {
+    init(size: Int, bounds: CGRect, state: GameState) {
         self.size = size
         self.vectors = Int(sqrt(Double(size)))
-        self.gameView = Array(repeating: TileView(), count: size)
+        self.gameView = []
         self.tileSize = bounds.width / CGFloat(vectors)
         self.yPos = bounds.height / 5
+        super.init(frame: CGRect(x: 0, y: yPos, width: bounds.width, height: bounds.width))
+        for tile in state.board {
+            makeTileView(tile)
+        }
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
     // Subscript to access gameView[i]
@@ -45,10 +53,11 @@ struct GameView {
         }
     }
     
-    mutating func makeTileView(_ x: Int, _ y: Int, _ tile: Tile) -> TileView {
-        let tileView = TileView(frame: CGRect(x: CGFloat(x) * tileSize, y: (CGFloat(y) * tileSize) + yPos, width: tileSize, height: tileSize))
+    func makeTileView(_ tile: Tile) {
+        let tileView = TileView(frame: CGRect(x: CGFloat(tile.col) * tileSize, y: CGFloat(tile.row) * tileSize,
+                                              width: tileSize, height: tileSize))
         tileView.tile = tile
-        self[x, y] = tileView
-        return tileView
+        gameView.append(tileView)
+        self.addSubview(tileView)
     }
 }

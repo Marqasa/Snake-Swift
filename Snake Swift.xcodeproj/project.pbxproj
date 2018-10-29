@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		3B771E7D216A5B080075DD72 /* GameState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B771E7C216A5B080075DD72 /* GameState.swift */; };
 		3B771E7F216A5B450075DD72 /* Tile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B771E7E216A5B450075DD72 /* Tile.swift */; };
+		3B82248221864201008F9886 /* ControlView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 3B82248121864201008F9886 /* ControlView.xib */; };
+		3B8224842186423F008F9886 /* ControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B8224832186423F008F9886 /* ControlView.swift */; };
 		3B83AFBE215BE41500F41319 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B83AFBD215BE41500F41319 /* AppDelegate.swift */; };
 		3B83AFC0215BE41500F41319 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B83AFBF215BE41500F41319 /* ViewController.swift */; };
 		3B83AFC3215BE41500F41319 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 3B83AFC1215BE41500F41319 /* Main.storyboard */; };
@@ -24,6 +26,8 @@
 /* Begin PBXFileReference section */
 		3B771E7C216A5B080075DD72 /* GameState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameState.swift; sourceTree = "<group>"; };
 		3B771E7E216A5B450075DD72 /* Tile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tile.swift; sourceTree = "<group>"; };
+		3B82248121864201008F9886 /* ControlView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ControlView.xib; sourceTree = "<group>"; };
+		3B8224832186423F008F9886 /* ControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ControlView.swift; sourceTree = "<group>"; };
 		3B83AFBA215BE41500F41319 /* Snake Swift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Snake Swift.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B83AFBD215BE41500F41319 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		3B83AFBF215BE41500F41319 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -63,7 +67,10 @@
 		3B771E7A216A5A9D0075DD72 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				3B83AFC6215BE41C00F41319 /* LaunchScreen.storyboard */,
 				3B83AFC1215BE41500F41319 /* Main.storyboard */,
+				3B82248121864201008F9886 /* ControlView.xib */,
+				3B8224832186423F008F9886 /* ControlView.swift */,
 				3B83AFCF215BE44000F41319 /* TileView.swift */,
 				3BDD0E342171484B0044CBA0 /* GameView.swift */,
 			);
@@ -103,7 +110,6 @@
 				3B771E7A216A5A9D0075DD72 /* View */,
 				3B771E7B216A5AA50075DD72 /* Controller */,
 				3B83AFC4215BE41C00F41319 /* Assets.xcassets */,
-				3B83AFC6215BE41C00F41319 /* LaunchScreen.storyboard */,
 				3B83AFC9215BE41C00F41319 /* Info.plist */,
 			);
 			path = "Snake Swift";
@@ -167,6 +173,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3B82248221864201008F9886 /* ControlView.xib in Resources */,
 				3B83AFC8215BE41C00F41319 /* LaunchScreen.storyboard in Resources */,
 				3B83AFC5215BE41C00F41319 /* Assets.xcassets in Resources */,
 				3B83AFC3215BE41500F41319 /* Main.storyboard in Resources */,
@@ -184,6 +191,7 @@
 				3BE3D745217A1DB40084D59E /* GameSettings.swift in Sources */,
 				3B83AFD0215BE44000F41319 /* TileView.swift in Sources */,
 				3B771E7F216A5B450075DD72 /* Tile.swift in Sources */,
+				3B8224842186423F008F9886 /* ControlView.swift in Sources */,
 				3B83AFC0215BE41500F41319 /* ViewController.swift in Sources */,
 				3B771E7D216A5B080075DD72 /* GameState.swift in Sources */,
 				3BED5C52216999FA0040E034 /* Path.swift in Sources */,
@@ -331,10 +339,10 @@
 		3B83AFCD215BE41C00F41319 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = F678QTNNJK;
 				INFOPLIST_FILE = "Snake Swift/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -349,10 +357,10 @@
 		3B83AFCE215BE41C00F41319 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = F678QTNNJK;
 				INFOPLIST_FILE = "Snake Swift/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

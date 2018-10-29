@@ -14,6 +14,7 @@ struct Path {
     var id: Int { return state.headID }
     var kind: Tile.Kind { return state.headKind }
     var depth: Int { return route.count }
+    var absFruitDistance: Int { return (state.fruitDistance ?? 0) + depth }
     var up:     Int { return id - state.row }
     var right:  Int { return id + state.col }
     var down:   Int { return id + state.row }

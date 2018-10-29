@@ -10,12 +10,14 @@ import UIKit
 
 struct SnakeLogic {
     var shortestPath: Path?
+    var logicCycles = 0
     
     // Get new direction:
     mutating func getNewDirection(state: GameState) -> Direction {
         if shortestPath?.route.isEmpty ?? true {
             var pathsToSearch = [Path.init(state: state)]
-            let timeLimit = DateInterval(start: Date(), duration: min(Double(state.fruitlessMoves) * 0.005, 1))
+            let duration = min(Double(state.fruitlessMoves) * 0.002, 2)
+            let timeLimit = DateInterval(start: Date(), duration: duration)
             findPath(&pathsToSearch, timeLimit)
         }
         if shortestPath != nil {
@@ -61,7 +63,7 @@ struct SnakeLogic {
             default:
                 // Check if the tail will be adjacent in 1 moves time
                 let nextTailID: Int = {
-                    switch state.tailKind.direction()! {
+                    switch state.tailKind.direction! {
                     case .up:       return state.tailID - state.row
                     case .right:    return state.tailID + state.col
                     case .down:     return state.tailID + state.row
@@ -93,7 +95,7 @@ struct SnakeLogic {
     
     // Choose new direction from all safe options based on fruit direction:
     private func getDirectionFromFruit(state: GameState, safeDirections: Set<Direction>) -> Direction {
-        let direction = state.head.kind.direction()!
+        let direction = state.head.kind.direction!
         switch state.fruitDirection {
         case .up?:
             if safeDirections.contains(.up) { return .up }
@@ -158,14 +160,16 @@ struct SnakeLogic {
         
         // Search path for fruit
         func searchPath(_ path: Path, direction: Direction) -> Bool {
+            logicCycles += 1
             var newPath = path
+            newPath.state = GameState(fromState: path.state)
             newPath.route.append(direction)
-            newPath.state.headKind = .head(direction, UIColor.red)
-            let result = newPath.state.update(live: false)
+            newPath.state.headDirection = direction
+            let result = newPath.state.update()
             
             switch result {
             case .gameOver: return false
-            case .newFruit:
+            case .fruitEaten:
                 for direction in Set<Direction>(arrayLiteral: .up, .right, .down, .left) {
                     var checkedTiles = Set<Int>()
                     let startingTile: Int = {
@@ -190,8 +194,8 @@ struct SnakeLogic {
         }
         
         if !pathsToSearch.isEmpty {
-            var last = 0
-            for (i, path) in pathsToSearch.enumerated() {
+            var pathsSearched = 0
+            for path in pathsToSearch where path.absFruitDistance <= pathsToSearch[0].absFruitDistance {
                 if shortestPath != nil || Date() > timeLimit.end { return }
                 if (pathsToSearch.count == 1 && !path.route.isEmpty) || path.depth > path.state.snake.count * 8 {
                     shortestPath = path; return
@@ -200,9 +204,10 @@ struct SnakeLogic {
                 if searchPath(path, direction: .right) { return }
                 if searchPath(path, direction: .down) { return }
                 if searchPath(path, direction: .left) { return }
-                last = i
+                pathsSearched += 1
             }
-            pathsToSearch.removeSubrange(0...last) // Remove searched paths
+            pathsToSearch.removeSubrange(0..<pathsSearched) // Remove searched paths
+            pathsToSearch.sort { $0.absFruitDistance < $1.absFruitDistance }
         }
         findPath(&pathsToSearch, timeLimit)
     }

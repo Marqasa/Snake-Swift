@@ -17,12 +17,66 @@
                     <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <subviews>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="snake" translatesAutoresizingMaskIntoConstraints="NO" id="gpv-FZ-iri">
+                                <rect key="frame" x="0.0" y="76" width="375" height="489"/>
+                            </imageView>
+                            <button opaque="NO" tag="1" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jdd-QV-e3E">
+                                <rect key="frame" x="0.0" y="585" width="187.5" height="62"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="25"/>
+                                <state key="normal" title="PLAY">
+                                    <color key="titleColor" red="0.58072251080000004" green="0.066734083" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                </state>
+                                <connections>
+                                    <action selector="playButtonPressed:" destination="BYZ-38-t0r" eventType="touchUpInside" id="8Ng-Os-Wbl"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" tag="2" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="f85-ON-MSL">
+                                <rect key="frame" x="187.5" y="585" width="187.5" height="62"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="25"/>
+                                <state key="normal" title="WATCH">
+                                    <color key="titleColor" red="0.58072251080000004" green="0.066734083" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                </state>
+                                <connections>
+                                    <action selector="buttonPressed:" destination="BYZ-38-t0r" eventType="touchUpInside" id="mAY-Ri-XsH"/>
+                                </connections>
+                            </button>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Snake" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="xOY-CF-VHa">
+                                <rect key="frame" x="0.0" y="20" width="375" height="36"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="30"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="f85-ON-MSL" firstAttribute="top" secondItem="gpv-FZ-iri" secondAttribute="bottom" constant="20" id="36x-Xu-YYw"/>
+                            <constraint firstItem="gpv-FZ-iri" firstAttribute="top" secondItem="xOY-CF-VHa" secondAttribute="bottom" constant="20" id="4h3-nN-7re"/>
+                            <constraint firstItem="xOY-CF-VHa" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" id="6w2-UT-KqE"/>
+                            <constraint firstAttribute="bottom" secondItem="jdd-QV-e3E" secondAttribute="bottom" constant="20" id="EuV-QY-fWi"/>
+                            <constraint firstAttribute="trailing" secondItem="gpv-FZ-iri" secondAttribute="trailing" id="GM8-2s-n1V"/>
+                            <constraint firstItem="xOY-CF-VHa" firstAttribute="top" secondItem="8bC-Xf-vdC" secondAttribute="top" constant="20" id="Jz6-Z2-FXj"/>
+                            <constraint firstAttribute="trailing" secondItem="xOY-CF-VHa" secondAttribute="trailing" id="Pop-nQ-DTQ"/>
+                            <constraint firstItem="f85-ON-MSL" firstAttribute="width" secondItem="jdd-QV-e3E" secondAttribute="width" id="R72-AF-468"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="f85-ON-MSL" secondAttribute="bottom" constant="20" id="SkW-dG-lkV"/>
+                            <constraint firstItem="jdd-QV-e3E" firstAttribute="top" secondItem="gpv-FZ-iri" secondAttribute="bottom" constant="20" id="UAa-U5-XHN"/>
+                            <constraint firstItem="gpv-FZ-iri" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" id="g9x-LO-pc0"/>
+                            <constraint firstAttribute="trailing" secondItem="f85-ON-MSL" secondAttribute="trailing" id="wUL-aL-WP9"/>
+                            <constraint firstItem="f85-ON-MSL" firstAttribute="leading" secondItem="jdd-QV-e3E" secondAttribute="trailing" id="yC4-q4-Ki3"/>
+                            <constraint firstItem="jdd-QV-e3E" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" id="yMm-lp-3Qp"/>
+                        </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
+                    <connections>
+                        <outlet property="playButton" destination="jdd-QV-e3E" id="5AT-0K-lS7"/>
+                        <outlet property="watchButton" destination="f85-ON-MSL" id="9iQ-Vq-LZx"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
+            <point key="canvasLocation" x="40.799999999999997" y="25.637181409295355"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="snake" width="381" height="489"/>
+    </resources>
 </document>

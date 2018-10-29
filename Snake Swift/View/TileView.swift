@@ -12,6 +12,7 @@ class TileView: UIView {
     var tile = Tile()
     
     override func draw(_ rect: CGRect) {
+        alpha = 0.9
         
         let tileWidth = self.bounds.size.width
         let tileHeight = self.bounds.size.height

@@ -21,58 +21,57 @@ enum Direction: CaseIterable {
 }
 
 class ViewController: UIViewController {
-    var gameTimer = Timer()
     var newDirection: Direction = .right
     var gameSettings = GameSettings()
     var snakeLogic = SnakeLogic()
     var gameState: GameState?
     var gameView: GameView?
+    var controlView: ControlView?
+    var gameTimer: Timer?
+    var newGameRequested = false
+    var gameRunning = false
+    @IBOutlet weak var playButton: UIButton!
+    @IBOutlet weak var watchButton: UIButton!
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    @IBAction func playButtonPressed(_ sender: UIButton) {
+        gameSettings.watchMode = false
+        gameSettings.speed = 0.2
+        if controlView == nil {
+            let height = view.bounds.height - view.bounds.width - (view.bounds.height / 5)
+            let yPos = self.view.bounds.width + (view.bounds.height / 5)
+            controlView = ControlView(frame: CGRect(x: 0, y: yPos, width: self.view.bounds.width, height: height))
+            view.addSubview(controlView!)
+        } else {
+            controlView!.isHidden = false
+            controlView!.route = []
+        }
+        playButton.isHidden = true
+        watchButton.isHidden = true
         newGame()
     }
     
+    @IBAction func buttonPressed(_ sender: UIButton) {
+        gameSettings.watchMode = true
+        gameSettings.speed = 0.1
+        if gameRunning {
+            newGameRequested = true
+        } else {
+            newGame()
+        }
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+    }
+    
     func newGame() {
+        endGame()
+        newGameRequested = false
+        gameRunning = true
         gameState = GameState(size: gameSettings.boardSize.rawValue)
-        gameView = GameView(size: gameSettings.boardSize.rawValue, bounds: self.view.bounds)
-        
-        // Fill the board with tiles:
-        for x in 0..<gameState!.col {
-            for y in 0..<gameState!.col {
-                
-                // Make a new tile and add it the the board:
-                let tile = gameState!.makeTile(x, y)
-                
-                // Make a new tileView and add it as a subview:
-                self.view.addSubview(gameView!.makeTileView(x, y, tile))
-            }
-        }
-        
-        // Add the snake:
-        let headID = (gameState!.col * 3) + gameState!.row
-        gameState!.snake.append(headID)
-        gameState![headID]!.kind = .head(.right, UIColor.red)
-        gameState!.emptyTiles.remove(headID)
-        gameView![headID]!.tile = gameState![headID]!
-        
-        let bodyID = headID - gameState!.col
-        gameState!.snake.append(bodyID)
-        gameState![bodyID]!.kind = .body(.right, .rightLeft, UIColor.red)
-        gameState!.emptyTiles.remove(bodyID)
-        gameView![bodyID]!.tile = gameState![bodyID]!
-        
-        let tailID = bodyID - gameState!.col
-        gameState!.snake.append(tailID)
-        gameState![tailID]!.kind = .tail(.right, UIColor.red)
-        gameState!.emptyTiles.remove(tailID)
-        gameView![tailID]!.tile = gameState![tailID]!
-        
-        // Add a new fruit
-        gameState!.newFruit()
-        if let fruitID = gameState!.fruitID {
-            gameView![fruitID]!.tile = gameState![fruitID]!
-        }
+        gameView = GameView(size: gameSettings.boardSize.rawValue, bounds: self.view.bounds, state: gameState!)
+        view.addSubview(gameView!)
+        newDirection = gameState!.headDirection
         
         // Start the game
         gameTimer = Timer.scheduledTimer(withTimeInterval: gameSettings.speed, repeats: true) { timer in
@@ -82,20 +81,32 @@ class ViewController: UIViewController {
     
     // The game loop:
     func gameLoop() {
-        newDirection = snakeLogic.getNewDirection(state: gameState!)
+        if gameSettings.watchMode {
+            newDirection = snakeLogic.getNewDirection(state: gameState!)
+        } else {
+            if !controlView!.route.isEmpty {
+                newDirection = controlView!.route[0]
+                controlView!.route.remove(at: 0)
+            }
+        }
+        gameState!.headDirection = newDirection
         
-        gameState!.headKind = .head(newDirection, gameState!.headKind.color()!)
-        
-        let result = gameState!.update(live: true)
+        let result = gameState!.update()
         switch result {
-        case .newFruit: snakeLogic.shortestPath = nil
+        case .fruitEaten:
+            gameState!.newFruit()
+            snakeLogic.shortestPath = nil
         case .gameOver: gameOver()
-        case .victory: victory()
+        case .gameWon: victory()
         default: break
         }
 
         
         updateGameView()
+        
+        if newGameRequested {
+            newGame()
+        }
     }
     
     func updateGameView() {
@@ -107,12 +118,24 @@ class ViewController: UIViewController {
     }
     
     func gameOver() {
-        print("Game Over!")
-        gameTimer.invalidate()
+        gameRunning = false
+        if controlView != nil { controlView!.isHidden = true }
+        playButton.isHidden = false
+        watchButton.isHidden = false
+        gameTimer?.invalidate()
     }
     
     func victory() {
         print("Victory!")
-        gameState!.restart()
+//        gameState!.restart()
+    }
+    
+    func endGame() {
+        gameTimer?.invalidate()
+        gameTimer = nil
+        gameView?.removeFromSuperview()
+        gameView = nil
+        gameState = nil
+        gameRunning = false
     }
 }
