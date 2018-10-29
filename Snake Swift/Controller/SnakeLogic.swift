@@ -16,7 +16,7 @@ struct SnakeLogic {
     mutating func getNewDirection(state: GameState) -> Direction {
         if shortestPath?.route.isEmpty ?? true {
             var pathsToSearch = [Path.init(state: state)]
-            let duration = min(Double(state.fruitlessMoves) * 0.002, 2)
+            let duration = min(Double(state.fruitlessMoves) * 0.003, 3)
             let timeLimit = DateInterval(start: Date(), duration: duration)
             findPath(&pathsToSearch, timeLimit)
         }

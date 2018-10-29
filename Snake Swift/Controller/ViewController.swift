@@ -26,31 +26,33 @@ class ViewController: UIViewController {
     var snakeLogic = SnakeLogic()
     var gameState: GameState?
     var gameView: GameView?
-    var controlView: ControlView?
+    var controlView: ControlView!
     var gameTimer: Timer?
     var newGameRequested = false
     var gameRunning = false
     @IBOutlet weak var playButton: UIButton!
     @IBOutlet weak var watchButton: UIButton!
     
+    // Set up the game in play mode
     @IBAction func playButtonPressed(_ sender: UIButton) {
         gameSettings.watchMode = false
         gameSettings.speed = 0.2
         if controlView == nil {
             let height = view.bounds.height - view.bounds.width - (view.bounds.height / 5)
-            let yPos = self.view.bounds.width + (view.bounds.height / 5)
-            controlView = ControlView(frame: CGRect(x: 0, y: yPos, width: self.view.bounds.width, height: height))
-            view.addSubview(controlView!)
+            let y = view.bounds.width + (view.bounds.height / 5)
+            controlView = ControlView(frame: CGRect(x: 0, y: y, width: view.bounds.width, height: height))
+            view.addSubview(controlView)
         } else {
-            controlView!.isHidden = false
-            controlView!.route = []
+            controlView.isHidden = false
+            controlView.route = []
         }
         playButton.isHidden = true
         watchButton.isHidden = true
         newGame()
     }
     
-    @IBAction func buttonPressed(_ sender: UIButton) {
+    // Set up the game in watch mode
+    @IBAction func watchButtonPressed(_ sender: UIButton) {
         gameSettings.watchMode = true
         gameSettings.speed = 0.1
         if gameRunning {
@@ -64,12 +66,14 @@ class ViewController: UIViewController {
         super.viewDidLoad()
     }
     
+    // Initialize and start a new game
     func newGame() {
         endGame()
+        snakeLogic.shortestPath = nil
         newGameRequested = false
         gameRunning = true
         gameState = GameState(size: gameSettings.boardSize.rawValue)
-        gameView = GameView(size: gameSettings.boardSize.rawValue, bounds: self.view.bounds, state: gameState!)
+        gameView = GameView(bounds: view.bounds, state: gameState!)
         view.addSubview(gameView!)
         newDirection = gameState!.headDirection
         
@@ -84,9 +88,9 @@ class ViewController: UIViewController {
         if gameSettings.watchMode {
             newDirection = snakeLogic.getNewDirection(state: gameState!)
         } else {
-            if !controlView!.route.isEmpty {
-                newDirection = controlView!.route[0]
-                controlView!.route.remove(at: 0)
+            if !controlView.route.isEmpty {
+                newDirection = controlView.route[0]
+                controlView.route.remove(at: 0)
             }
         }
         gameState!.headDirection = newDirection
@@ -119,7 +123,7 @@ class ViewController: UIViewController {
     
     func gameOver() {
         gameRunning = false
-        if controlView != nil { controlView!.isHidden = true }
+        if controlView != nil { controlView.isHidden = true }
         playButton.isHidden = false
         watchButton.isHidden = false
         gameTimer?.invalidate()

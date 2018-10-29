@@ -9,18 +9,15 @@
 import UIKit
 
 class GameView: UIView {
-    let size: Int
-    let vectors: Int
-    let tileSize: CGFloat
-    let yPos: CGFloat
-    var gameView: [TileView]
+    private let vectors: Int
+    private let tileSize: CGFloat
+    private let yPos: CGFloat
+    var gameView = [TileView]()
     
-    init(size: Int, bounds: CGRect, state: GameState) {
-        self.size = size
-        self.vectors = Int(sqrt(Double(size)))
-        self.gameView = []
-        self.tileSize = bounds.width / CGFloat(vectors)
-        self.yPos = bounds.height / 5
+    init(bounds: CGRect, state: GameState) {
+        vectors = state.col
+        tileSize = bounds.width / CGFloat(vectors)
+        yPos = bounds.height / 5
         super.init(frame: CGRect(x: 0, y: yPos, width: bounds.width, height: bounds.width))
         for tile in state.board {
             makeTileView(tile)
