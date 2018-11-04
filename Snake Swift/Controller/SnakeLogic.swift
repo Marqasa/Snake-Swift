@@ -17,7 +17,7 @@ struct SnakeLogic {
             let pathList = PathList()
             Path.maxID = 0
             pathList.insert(path: Path(state: state, route: [Direction](), next: nil))
-            let duration = Double(1000)//min(Double(state.fruitlessMoves) * 0.003, 3)
+            let duration = min(Double(state.fruitlessMoves) * 0.003, 3)
             let timeLimit = DateInterval(start: Date(), duration: duration)
             findPath(pathList, timeLimit)
         }
