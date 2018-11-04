@@ -53,6 +53,7 @@ class ViewController: UIViewController {
     
     // Set up the game in watch mode
     @IBAction func watchButtonPressed(_ sender: UIButton) {
+        UIApplication.shared.isIdleTimerDisabled = true
         gameSettings.watchMode = true
         gameSettings.speed = 0.1
         if gameRunning {
@@ -83,18 +84,32 @@ class ViewController: UIViewController {
         }
     }
     
-    // The game loop:
+    // The game loop
     func gameLoop() {
+        
         if gameSettings.watchMode {
+            
+            // AI chooses direction
             newDirection = snakeLogic.getNewDirection(state: gameState!)
         } else {
+            
+            // User chooses direction
             if !controlView.route.isEmpty {
-                newDirection = controlView.route[0]
+                
+                // Snake can't go backwards
+                switch controlView.route[0] {
+                case .up:       if gameState!.headDirection != .down    { newDirection = .up }
+                case .right:    if gameState!.headDirection != .left    { newDirection = .right }
+                case .down:     if gameState!.headDirection != .up      { newDirection = .down }
+                case .left:     if gameState!.headDirection != .right   { newDirection = .left }
+                default: break
+                }
                 controlView.route.remove(at: 0)
             }
         }
         gameState!.headDirection = newDirection
         
+        // Update game and get result
         let result = gameState!.update()
         switch result {
         case .fruitEaten:
@@ -104,7 +119,7 @@ class ViewController: UIViewController {
         case .gameWon: victory()
         default: break
         }
-
+        
         
         updateGameView()
         
@@ -122,6 +137,7 @@ class ViewController: UIViewController {
     }
     
     func gameOver() {
+        UIApplication.shared.isIdleTimerDisabled = false
         gameRunning = false
         if controlView != nil { controlView.isHidden = true }
         playButton.isHidden = false
@@ -130,6 +146,7 @@ class ViewController: UIViewController {
     }
     
     func victory() {
+        UIApplication.shared.isIdleTimerDisabled = false
         print("Victory!")
 //        gameState!.restart()
     }

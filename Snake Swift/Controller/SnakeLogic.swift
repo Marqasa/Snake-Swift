@@ -10,15 +10,16 @@ import UIKit
 
 struct SnakeLogic {
     var shortestPath: Path?
-    var logicCycles = 0
     
     // Get new direction:
     mutating func getNewDirection(state: GameState) -> Direction {
         if shortestPath?.route.isEmpty ?? true {
-            var pathsToSearch = [Path.init(state: state)]
-            let duration = min(Double(state.fruitlessMoves) * 0.003, 3)
+            let pathList = PathList()
+            Path.maxID = 0
+            pathList.insert(path: Path(state: state, route: [Direction](), next: nil))
+            let duration = Double(1000)//min(Double(state.fruitlessMoves) * 0.003, 3)
             let timeLimit = DateInterval(start: Date(), duration: duration)
-            findPath(&pathsToSearch, timeLimit)
+            findPath(pathList, timeLimit)
         }
         if shortestPath != nil {
             let newDirection = shortestPath!.route[0]
@@ -27,7 +28,6 @@ struct SnakeLogic {
             return newDirection
         }
         return self.getDirectionFromFruit(state: state, safeDirections: getSafeDirections(state))
-        
     }
     
     private func getSafeDirections(_ state: GameState) -> Set<Direction> {
@@ -61,18 +61,20 @@ struct SnakeLogic {
             case .tail: return true
             case .fruit: break
             default:
-                // Check if the tail will be adjacent in 1 moves time
-                let nextTailID: Int = {
-                    switch state.tailKind.direction! {
-                    case .up:       return state.tailID - state.row
-                    case .right:    return state.tailID + state.col
-                    case .down:     return state.tailID + state.row
-                    case .left:     return state.tailID - state.col
-                    default:        fatalError("Invalid direction.")
+                // Check if the tail will be adjacent in 1 moves time (only if the fruit is still on the board, else the tail is assumed to remain still)
+                if state.fruitID != nil {
+                    let nextTailID: Int = {
+                        switch state.tailKind.direction! {
+                        case .up:       return state.tailID - state.row
+                        case .right:    return state.tailID + state.col
+                        case .down:     return state.tailID + state.row
+                        case .left:     return state.tailID - state.col
+                        default:        fatalError("Invalid direction.")
+                        }
+                    }()
+                    if nextTailID == tileID - state.row || nextTailID == tileID + state.row || nextTailID == tileID - state.col || nextTailID == tileID + state.col {
+                        return true
                     }
-                }()
-                if nextTailID == tileID - state.row || nextTailID == tileID + state.row || nextTailID == tileID - state.col || nextTailID == tileID + state.col {
-                    return true
                 }
             }
         }
@@ -156,12 +158,11 @@ struct SnakeLogic {
     }
     
     // Find path exstensive search
-    private mutating func findPath(_ pathsToSearch: inout [Path], _ timeLimit: DateInterval) {
+    private mutating func findPath(_ pathList: PathList, _ timeLimit: DateInterval) {
         
         // Search path for fruit
-        func searchPath(_ path: Path, direction: Direction) -> Bool {
-            logicCycles += 1
-            var newPath = path
+        func searchPath(_ path: Path,_ direction: Direction) -> Bool {
+            let newPath = Path(state: path.state, route: path.route, next: nil)
             newPath.state = GameState(fromState: path.state)
             newPath.route.append(direction)
             newPath.state.headDirection = direction
@@ -189,26 +190,23 @@ struct SnakeLogic {
                 return false
             default: break
             }
-            pathsToSearch.append(newPath)
+            pathList.insertInOrder(path: newPath)
             return false
         }
-        
-        if !pathsToSearch.isEmpty {
-            var pathsSearched = 0
-            for path in pathsToSearch where path.absFruitDistance <= pathsToSearch[0].absFruitDistance {
-                if shortestPath != nil || Date() > timeLimit.end { return }
-                if (pathsToSearch.count == 1 && !path.route.isEmpty) || path.depth > path.state.snake.count * 8 {
-                    shortestPath = path; return
-                }
-                if searchPath(path, direction: .up) { return }
-                if searchPath(path, direction: .right) { return }
-                if searchPath(path, direction: .down) { return }
-                if searchPath(path, direction: .left) { return }
-                pathsSearched += 1
-            }
-            pathsToSearch.removeSubrange(0..<pathsSearched) // Remove searched paths
-            pathsToSearch.sort { $0.absFruitDistance < $1.absFruitDistance }
+
+        while !pathList.isEmpty {
+            let path = pathList.first!
+            
+            if shortestPath != nil { return } // Once a path is found return
+            if path.next == nil && !path.route.isEmpty { shortestPath = path; return } // If there is only one option take it
+            if Date() > timeLimit.end { return } // Give up if the search takes too long
+            
+            if searchPath(path, .up)    { return }
+            if searchPath(path, .right) { return }
+            if searchPath(path, .down)  { return }
+            if searchPath(path, .left)  { return }
+            
+            pathList.delete(id: path.id) // Delete searched path from list
         }
-        findPath(&pathsToSearch, timeLimit)
     }
 }
